@@ -1,6 +1,7 @@
 from playwright.sync_api import Page
 
 from niffler_e_2_e_tests_python.page_factory.button import Button
+from niffler_e_2_e_tests_python.page_factory.text import Text
 from niffler_e_2_e_tests_python.page_factory.title import Title
 from niffler_e_2_e_tests_python.page_factory.input import Input
 from niffler_e_2_e_tests_python.page_factory.list_item import ListItem
@@ -49,6 +50,10 @@ class NewSpendingPage(BasePage):
             page, locator='#save', name='Add button'
         )
 
-        self.error_amount_message = Title(
+        self.error_amount_message = Text(
             page, locator='//span[contains(text(), "Amount has to be")]', name='Error message'
+        )
+
+        self.error_no_category_message = Text(
+            page, locator='//span[contains(text(), "Please choose category")]', name='Error message'
         )

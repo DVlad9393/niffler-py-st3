@@ -75,7 +75,11 @@ class MainPage(BasePage):
         )
 
         self.first_row_checkbox = СheckBox(
-            page, locator='tbody tr td input[type="checkbox"]', name='First row checkbox'
+            page, locator='tbody tr td input[type="checkbox"]', name='First row checkbox', index=0
+        )
+
+        self.second_row_checkbox = СheckBox(
+            page, locator='tbody tr td input[type="checkbox"]', name='Second row checkbox', index=1
         )
 
         self.first_row_category = Text(
@@ -87,7 +91,11 @@ class MainPage(BasePage):
         )
 
         self.first_row_description = Text(
-            page, locator='tbody tr td:nth-child(4) span', name='First row description'
+            page, locator='tbody tr td:nth-child(4) span', name='First row description', index=0
+        )
+
+        self.second_row_description = Text(
+            page, locator='tbody tr td:nth-child(4) span', name='Second row description', index=1
         )
 
         self.first_row_date = Text(

@@ -16,7 +16,6 @@ from dotenv import load_dotenv
 load_dotenv()
 base_auth_url = os.getenv("BASE_AUTH_URL")
 base_url = os.getenv("BASE_URL")
-from faker import Faker
 
 class LoginPage(BasePage):
     def __init__(self, page: Page) -> None:

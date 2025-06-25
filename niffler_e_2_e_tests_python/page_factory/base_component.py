@@ -10,10 +10,11 @@ from playwright.sync_api import Locator, Page, expect
 
 
 class BaseComponent(ABC):
-    def __init__(self, page: Page, locator: str, name: str) -> None:
+    def __init__(self, page: Page, locator: str, name: str,index: int | None = None) -> None:
         self.page = page
         self.name = name
         self.locator = locator
+        self.index = index
 
     @property
     @abstractmethod
@@ -22,12 +23,10 @@ class BaseComponent(ABC):
 
     def get_locator(self, **kwargs) -> Locator:
         locator = self.locator.format(**kwargs)
-        return self.page.locator(locator)
-
-    # def click(self, **kwargs) -> None:
-    #     with allure.step(f'Clicking {self.type_of} with name "{self.name}"'):
-    #         locator = self.get_locator(**kwargs)
-    #         locator.click(timeout=10000)
+        base_locator = self.page.locator(locator)
+        if self.index is not None:
+            return base_locator.nth(self.index)
+        return base_locator
 
     def click(
             self,
