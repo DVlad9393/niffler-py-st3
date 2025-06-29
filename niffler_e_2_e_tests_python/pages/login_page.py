@@ -72,8 +72,6 @@ class LoginPage(BasePage):
 
     def create_new_account(self, username: str, password: str) -> None:
         with allure.step(f'Creating new account: {username}'):
-            username = username
-            password = password
             self.visit(base_auth_url)
             self.create_new_account_button.click()
             self.info_have_an_account_text.should_be_visible()
