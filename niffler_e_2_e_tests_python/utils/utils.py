@@ -1,36 +1,84 @@
-from httpx import Response
+from datetime import datetime
+import httpx
+from niffler_e_2_e_tests_python.models.spend import CategoryDTO, SpendDTO, SpendAdd
 from niffler_e_2_e_tests_python.utils.base_session import BaseSession
 
 class BaseApiClient:
     def __init__(self, session: BaseSession, token: str) -> None:
+        """
+        Инициализирует API клиент с сессией и токеном авторизации.
+
+        :param session: Экземпляр сессии для выполнения HTTP-запросов.
+        :param token: JWT-токен для авторизации.
+        """
         self.session = session
         self.set_token(token)
 
     def set_token(self, token: str) -> None:
+        """
+        Устанавливает токен авторизации для последующих запросов.
+
+        :param token: JWT-токен для авторизации.
+        """
         self.token = token
         self.headers = {'Authorization': f"Bearer {self.token}"}
 
+    @staticmethod
+    def raise_for_status(resp: httpx.Response):
+        """
+        Проверяет статус ответа и выбрасывает исключение, если произошла ошибка.
+
+        :param resp: Ответ httpx.Response от сервера.
+        :raises httpx.HTTPStatusError: Если статус ответа не 200 или 201.
+        """
+        try:
+            resp.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code != 200 and e.response.status_code != 201:
+                e.add_note(resp.text)
+                raise e
+
 class CategoriesApiClient(BaseApiClient):
-    def get_all_categories(self, excludeArchived: bool = False) -> Response:
+    def get_all_categories(self, excludeArchived: bool = False) -> list[CategoryDTO]:
+        """
+        Получает список всех категорий пользователя.
+
+        :param excludeArchived: Исключать ли архивированные категории (по умолчанию False).
+        :return: Список объектов CategoryDTO.
+        """
         resp = self.session.get(
             "/api/categories/all",
             params={"excludeArchived": excludeArchived},
             headers=self.headers
         )
-        resp.raise_for_status()
-        return resp
+        self.raise_for_status(resp)
+        return [CategoryDTO.model_validate(item) for item in resp.json()]
 
-    def add_category(self, category_name: str) -> Response:
+    def add_category(self, category_name: str) -> CategoryDTO:
+        """
+        Создаёт новую категорию.
+
+        :param category_name: Название новой категории.
+        :return: Созданная категория как CategoryDTO.
+        """
         payload = {"name": category_name}
         resp = self.session.post(
             "/api/categories/add",
             json=payload,
             headers=self.headers
         )
-        resp.raise_for_status()
-        return resp
+        self.raise_for_status(resp)
+        return CategoryDTO.model_validate(resp.json())
 
-    def update_category(self, category_id: str, category_name: str, archived: bool) -> Response:
+    def update_category(self, category_id: str, category_name: str, archived: bool) -> CategoryDTO:
+        """
+        Обновляет существующую категорию (например, название или признак архивации).
+
+        :param category_id: ID категории.
+        :param category_name: Новое имя категории.
+        :param archived: Статус архивации (True/False).
+        :return: Обновлённая категория как CategoryDTO.
+        """
         payload = {
             "id": category_id,
             "name": category_name,
@@ -41,12 +89,18 @@ class CategoriesApiClient(BaseApiClient):
             json=payload,
             headers=self.headers
         )
-        resp.raise_for_status()
-        return resp
-
+        self.raise_for_status(resp)
+        return CategoryDTO.model_validate(resp.json())
 
 class SpendApiClient(BaseApiClient):
-    def get_all_spends(self, filter_currency: str = None, filter_period: str = None) -> Response:
+    def get_all_spends(self, filter_currency: str = None, filter_period: str = None) -> list[SpendDTO]:
+        """
+        Получает список всех трат пользователя с возможностью фильтрации.
+
+        :param filter_currency: Фильтр по валюте (например, 'RUB').
+        :param filter_period: Фильтр по периоду (например, 'month', 'week').
+        :return: Список объектов SpendDTO.
+        """
         params = {}
         if filter_currency:
             params["filterCurrency"] = filter_currency
@@ -57,30 +111,40 @@ class SpendApiClient(BaseApiClient):
             params=params,
             headers=self.headers
         )
-        resp.raise_for_status()
-        return resp
+        self.raise_for_status(resp)
+        return [SpendDTO.model_validate(item) for item in resp.json()]
 
-    def add_spending(self, spend: dict) -> Response:
+    def add_spending(self, spend: SpendAdd, category: CategoryDTO, username: str) -> SpendDTO:
+        """
+        Добавляет новую трату.
+
+        :param spend: Данные траты (SpendAdd).
+        :param category: Категория, к которой относится трата (CategoryDTO).
+        :param username: Имя пользователя, для которого добавляется трата.
+        :return: Добавленная трата как SpendDTO.
+        """
+        payload = spend.model_dump()
+        if isinstance(payload.get("spendDate"), datetime):
+            payload["spendDate"] = payload["spendDate"].isoformat()
+        payload["category"] = category.model_dump()
+        payload["username"] = username
         resp = self.session.post(
             "/api/spends/add",
-            json=spend,
+            json=payload,
             headers=self.headers
         )
-        resp.raise_for_status()
-        return resp
+        self.raise_for_status(resp)
+        return SpendDTO.model_validate(resp.json())
 
-    def delete_spending(self, ids: list[str]) -> Response:
+    def delete_spending(self, ids: list[str]) -> None:
+        """
+        Удаляет одну или несколько трат по их идентификаторам.
+
+        :param ids: Список идентификаторов трат для удаления.
+        """
         resp = self.session.delete(
             "/api/spends/remove",
             params={"ids": ",".join(ids)},
             headers=self.headers
         )
-        resp.raise_for_status()
-        return resp
-
-
-class UserApiClient(BaseApiClient):
-    def get_current_user(self) -> Response:
-        resp = self.session.get("/api/users/current", headers=self.headers)
-        resp.raise_for_status()
-        return resp
+        self.raise_for_status(resp)

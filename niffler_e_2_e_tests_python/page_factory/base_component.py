@@ -21,7 +21,16 @@ class BaseComponent(ABC):
     def type_of(self) -> str:
         return 'component'
 
+    def filter_by_text(self, text: str) -> 'BaseComponent':
+        base_locator = self.page.locator(self.locator)
+        filtered_locator = base_locator.filter(has_text=text)
+        obj = self.__class__(self.page, self.locator, f'{self.name} (filtered by "{text}")')
+        obj._custom_locator = filtered_locator
+        return obj
+
     def get_locator(self, **kwargs) -> Locator:
+        if hasattr(self, '_custom_locator'):
+            return self._custom_locator
         locator = self.locator.format(**kwargs)
         base_locator = self.page.locator(locator)
         if self.index is not None:
@@ -52,6 +61,26 @@ class BaseComponent(ABC):
                 locator.click(timeout=10000)
                 return None
 
+    def input_text(self, text: str, **kwargs) -> None:
+        with allure.step(f'Input text "{text}" into {self.type_of} with name "{self.name}"'):
+            locator = self.get_locator(**kwargs)
+            locator.type(text, timeout=10000)
+
+    def clear(self, **kwargs) -> None:
+        with allure.step(f'Clearing {self.type_of} with name "{self.name}"'):
+            locator = self.get_locator(**kwargs)
+            locator.clear(timeout=10000)
+
+    def get_by_text(self, text: str, **kwargs) -> Locator:
+        with allure.step(f'Getting {self.type_of} with name "{self.name}"'):
+            locator = self.get_locator(**kwargs)
+            return locator.get_by_text(text)
+
+    def get_text(self, **kwargs) -> str:
+        with allure.step(f'Getting text from {self.type_of} with name "{self.name}"'):
+            locator = self.get_locator(**kwargs)
+            return locator.text_content()
+
     def should_be_visible(self, **kwargs) -> None:
         with allure.step(f'Checking that {self.type_of} "{self.name}" is visible'):
             locator = self.get_locator(**kwargs)
@@ -76,3 +105,8 @@ class BaseComponent(ABC):
         with allure.step(f'Checking that {self.type_of} "{self.name}" is enabled'):
             locator = self.get_locator(**kwargs)
             expect(locator).to_be_enabled(timeout=10000)
+
+    def should_be_disabled(self, **kwargs) -> None:
+        with allure.step(f'Checking that {self.type_of} "{self.name}" is disabled'):
+            locator = self.get_locator(**kwargs)
+            expect(locator).to_be_disabled(timeout=10000)

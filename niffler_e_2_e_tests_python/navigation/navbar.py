@@ -9,8 +9,22 @@ class Navbar:
         self.new_spending_button = Button(
             page, locator='a[href="/spending"]', name='Search'
         )
+        self.menu_button = Button(
+            page, locator='button[aria-label="Menu"]', name='Menu'
+        )
+        self.profile_button = Button(
+            page, locator='a[href="/profile"]', name='Profile'
+        )
 
     def open_new_spending_page(self):
         self.new_spending_button.should_be_visible()
         self.new_spending_button.hover()
         self.new_spending_button.click()
+
+    def open_profile_page(self):
+        self.menu_button.should_be_visible()
+        self.menu_button.hover()
+        self.menu_button.click()
+        self.profile_button.should_be_visible()
+        self.profile_button.hover()
+        self.profile_button.click()
