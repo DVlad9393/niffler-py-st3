@@ -1,6 +1,10 @@
+from allure_commons.reporter import AllureReporter
+from allure_commons.types import AttachmentType
+from allure_pytest.listener import AllureListener
 from dotenv import load_dotenv
 import os
 import pytest
+from pytest import Item
 
 from typing import Any, Generator, Callable
 
@@ -27,6 +31,45 @@ from faker import Faker
 
 fake = Faker()
 
+@pytest.hookimpl(hookwrapper=True, trylast=True)
+def pytest_runtest_call(item: Item) -> Generator[None, Any, None]:
+    """
+    Pytest-хук, вызываемый после выполнения теста (runtest_call).
+    Используется для динамического изменения заголовка теста в Allure-отчёте.
+
+    :param item: Тестовый элемент Pytest, который был вызван.
+    :yield: Управление передаётся другим хукам (hookwrapper).
+    """
+    yield
+    allure.dynamic.title(" ".join(item.name.split("_")[1:]).title())
+
+def allure_logger(config: pytest.Config) -> AllureReporter:
+    """
+    Получает Allure-логгер из Pytest-конфигурации.
+
+    :param config: Pytest-конфигурация (pytest.Config).
+    :return: Экземпляр AllureReporter, предоставляющий доступ к логированию в Allure.
+    """
+    listener: AllureListener = config.pluginmanager.get_plugin("allure_listener")
+    return listener.allure_logger
+
+@pytest.hookimpl(hookwrapper=True, trylast=True)
+def pytest_fixture_setup(fixturedef: pytest.FixtureDef, request: pytest.FixtureRequest) -> Generator[None, Any, None]:
+    """
+    Pytest-хук, вызываемый при инициализации любой фикстуры (fixture_setup).
+    Используется для изменения названия шага Setup в Allure-отчёте на более читаемое,
+    например, добавляя префикс с областью видимости и красивое имя фикстуры.
+
+    :param fixturedef: Определение фикстуры (FixtureDef), содержит метаданные о фикстуре.
+    :param request: Объект запроса фикстуры (FixtureRequest), содержит данные запроса.
+    :yield: Управление передаётся другим хукам (hookwrapper).
+    """
+    yield
+    logger = allure_logger(request.config)
+    item: pytest.Item = logger.get_last_item()
+    scope_letter = fixturedef.scope[0].upper()
+    item.name = f"[{scope_letter}] " + " ".join(fixturedef.argname.split("_")).title()
+
 @pytest.fixture(scope='session', autouse=True)
 def envs() -> Envs:
     """
@@ -35,7 +78,7 @@ def envs() -> Envs:
     :return: Экземпляр Envs с параметрами окружения.
     """
     load_dotenv()
-    return Envs(
+    env_instance = Envs(
         api_url=os.getenv("API_URL"),
         username=os.getenv("USERNAME"),
         password=os.getenv("PASSWORD"),
@@ -44,6 +87,8 @@ def envs() -> Envs:
         base_error_url=os.getenv("BASE_ERROR_URL"),
         spend_db_url=os.getenv("SPEND_DB_URL")
     )
+    allure.attach(env_instance.model_dump_json(indent=2), name= "env.json", attachment_type=AttachmentType.JSON)
+    return env_instance
 
 @pytest.fixture(scope='function', params=['chromium'])
 def browser_page(request) -> Generator[Any, Any, None]:
@@ -165,6 +210,8 @@ def login(login_page: LoginPage, main_page: MainPage, envs) -> tuple[str, str, s
     login_page.input_password.fill(envs.password)
     token = login_page.login_button.click(intercept_header=True)
     main_page.history_of_spending_title.should_be_visible()
+
+    allure.attach(token, name="token.txt", attachment_type=AttachmentType.TEXT)
     return envs.username, envs.password, token
 
 @pytest.fixture

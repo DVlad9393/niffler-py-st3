@@ -22,20 +22,22 @@ class BaseComponent(ABC):
         return 'component'
 
     def filter_by_text(self, text: str) -> 'BaseComponent':
-        base_locator = self.page.locator(self.locator)
-        filtered_locator = base_locator.filter(has_text=text)
-        obj = self.__class__(self.page, self.locator, f'{self.name} (filtered by "{text}")')
-        obj._custom_locator = filtered_locator
-        return obj
+        with allure.step(f'Filtering {self.type_of} with name "{self.name}" by text "{text}"'):
+            base_locator = self.page.locator(self.locator)
+            filtered_locator = base_locator.filter(has_text=text)
+            obj = self.__class__(self.page, self.locator, f'{self.name} (filtered by "{text}")')
+            obj._custom_locator = filtered_locator
+            return obj
 
     def get_locator(self, **kwargs) -> Locator:
-        if hasattr(self, '_custom_locator'):
-            return self._custom_locator
-        locator = self.locator.format(**kwargs)
-        base_locator = self.page.locator(locator)
-        if self.index is not None:
-            return base_locator.nth(self.index)
-        return base_locator
+        with allure.step(f'Getting locator for {self.type_of} with name "{self.name}"'):
+            if hasattr(self, '_custom_locator'):
+                return self._custom_locator
+            locator = self.locator.format(**kwargs)
+            base_locator = self.page.locator(locator)
+            if self.index is not None:
+                return base_locator.nth(self.index)
+            return base_locator
 
     def click(
             self,

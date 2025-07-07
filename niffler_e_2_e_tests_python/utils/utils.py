@@ -1,4 +1,6 @@
 from datetime import datetime
+
+import allure
 import httpx
 from niffler_e_2_e_tests_python.models.spend import CategoryDTO, SpendDTO, SpendAdd
 from niffler_e_2_e_tests_python.utils.base_session import BaseSession
@@ -20,8 +22,9 @@ class BaseApiClient:
 
         :param token: JWT-токен для авторизации.
         """
-        self.token = token
-        self.headers = {'Authorization': f"Bearer {self.token}"}
+        with allure.step("Set token"):
+            self.token = token
+            self.headers = {'Authorization': f"Bearer {self.token}"}
 
     @staticmethod
     def raise_for_status(resp: httpx.Response):
@@ -31,12 +34,13 @@ class BaseApiClient:
         :param resp: Ответ httpx.Response от сервера.
         :raises httpx.HTTPStatusError: Если статус ответа не 200 или 201.
         """
-        try:
-            resp.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code != 200 and e.response.status_code != 201:
-                e.add_note(resp.text)
-                raise e
+        with allure.step("Check status"):
+            try:
+                resp.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code != 200 and e.response.status_code != 201:
+                    e.add_note(resp.text)
+                    raise e
 
 class CategoriesApiClient(BaseApiClient):
     def get_all_categories(self, excludeArchived: bool = False) -> list[CategoryDTO]:
@@ -46,13 +50,14 @@ class CategoriesApiClient(BaseApiClient):
         :param excludeArchived: Исключать ли архивированные категории (по умолчанию False).
         :return: Список объектов CategoryDTO.
         """
-        resp = self.session.get(
-            "/api/categories/all",
-            params={"excludeArchived": excludeArchived},
-            headers=self.headers
-        )
-        self.raise_for_status(resp)
-        return [CategoryDTO.model_validate(item) for item in resp.json()]
+        with allure.step("Get all categories"):
+            resp = self.session.get(
+                "/api/categories/all",
+                params={"excludeArchived": excludeArchived},
+                headers=self.headers
+            )
+            self.raise_for_status(resp)
+            return [CategoryDTO.model_validate(item) for item in resp.json()]
 
     def add_category(self, category_name: str) -> CategoryDTO:
         """
@@ -61,14 +66,15 @@ class CategoriesApiClient(BaseApiClient):
         :param category_name: Название новой категории.
         :return: Созданная категория как CategoryDTO.
         """
-        payload = {"name": category_name}
-        resp = self.session.post(
-            "/api/categories/add",
-            json=payload,
-            headers=self.headers
-        )
-        self.raise_for_status(resp)
-        return CategoryDTO.model_validate(resp.json())
+        with allure.step("Add category"):
+            payload = {"name": category_name}
+            resp = self.session.post(
+                "/api/categories/add",
+                json=payload,
+                headers=self.headers
+            )
+            self.raise_for_status(resp)
+            return CategoryDTO.model_validate(resp.json())
 
     def update_category(self, category_id: str, category_name: str, archived: bool) -> CategoryDTO:
         """
@@ -79,18 +85,19 @@ class CategoriesApiClient(BaseApiClient):
         :param archived: Статус архивации (True/False).
         :return: Обновлённая категория как CategoryDTO.
         """
-        payload = {
-            "id": category_id,
-            "name": category_name,
-            "archived": archived
-        }
-        resp = self.session.patch(
-            "/api/categories/update",
-            json=payload,
-            headers=self.headers
-        )
-        self.raise_for_status(resp)
-        return CategoryDTO.model_validate(resp.json())
+        with allure.step("Update category"):
+            payload = {
+                "id": category_id,
+                "name": category_name,
+                "archived": archived
+            }
+            resp = self.session.patch(
+                "/api/categories/update",
+                json=payload,
+                headers=self.headers
+            )
+            self.raise_for_status(resp)
+            return CategoryDTO.model_validate(resp.json())
 
 class SpendApiClient(BaseApiClient):
     def get_all_spends(self, filter_currency: str = None, filter_period: str = None) -> list[SpendDTO]:
@@ -101,18 +108,19 @@ class SpendApiClient(BaseApiClient):
         :param filter_period: Фильтр по периоду (например, 'month', 'week').
         :return: Список объектов SpendDTO.
         """
-        params = {}
-        if filter_currency:
-            params["filterCurrency"] = filter_currency
-        if filter_period:
-            params["filterPeriod"] = filter_period
-        resp = self.session.get(
-            "/api/spends/all",
-            params=params,
-            headers=self.headers
-        )
-        self.raise_for_status(resp)
-        return [SpendDTO.model_validate(item) for item in resp.json()]
+        with allure.step("Get all spends"):
+            params = {}
+            if filter_currency:
+                params["filterCurrency"] = filter_currency
+            if filter_period:
+                params["filterPeriod"] = filter_period
+            resp = self.session.get(
+                "/api/spends/all",
+                params=params,
+                headers=self.headers
+            )
+            self.raise_for_status(resp)
+            return [SpendDTO.model_validate(item) for item in resp.json()]
 
     def add_spending(self, spend: SpendAdd, category: CategoryDTO, username: str) -> SpendDTO:
         """
@@ -123,18 +131,19 @@ class SpendApiClient(BaseApiClient):
         :param username: Имя пользователя, для которого добавляется трата.
         :return: Добавленная трата как SpendDTO.
         """
-        payload = spend.model_dump()
-        if isinstance(payload.get("spendDate"), datetime):
-            payload["spendDate"] = payload["spendDate"].isoformat()
-        payload["category"] = category.model_dump()
-        payload["username"] = username
-        resp = self.session.post(
-            "/api/spends/add",
-            json=payload,
-            headers=self.headers
-        )
-        self.raise_for_status(resp)
-        return SpendDTO.model_validate(resp.json())
+        with allure.step("Add spending"):
+            payload = spend.model_dump()
+            if isinstance(payload.get("spendDate"), datetime):
+                payload["spendDate"] = payload["spendDate"].isoformat()
+            payload["category"] = category.model_dump()
+            payload["username"] = username
+            resp = self.session.post(
+                "/api/spends/add",
+                json=payload,
+                headers=self.headers
+            )
+            self.raise_for_status(resp)
+            return SpendDTO.model_validate(resp.json())
 
     def delete_spending(self, ids: list[str]) -> None:
         """
@@ -142,9 +151,10 @@ class SpendApiClient(BaseApiClient):
 
         :param ids: Список идентификаторов трат для удаления.
         """
-        resp = self.session.delete(
-            "/api/spends/remove",
-            params={"ids": ",".join(ids)},
-            headers=self.headers
-        )
-        self.raise_for_status(resp)
+        with allure.step("Delete spending"):
+            resp = self.session.delete(
+                "/api/spends/remove",
+                params={"ids": ",".join(ids)},
+                headers=self.headers
+            )
+            self.raise_for_status(resp)

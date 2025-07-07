@@ -1,9 +1,13 @@
+import allure
 import pytest
 
 from ..pages.main_page import MainPage
 from ..pages.new_spending_page import NewSpendingPage
 from datetime import datetime, timezone
 
+
+@allure.feature("Spending")
+@allure.story("Add spending UI")
 @pytest.mark.spending
 @pytest.mark.parametrize("desc,amount,currency", [
     ("Buy milk", 300, "RUB"),
@@ -26,6 +30,8 @@ def test_add_spending_ui(main_page, new_spending_page, spend_api, desc, amount, 
 
     created_spendings.append(desc)
 
+@allure.feature("Spending")
+@allure.story("Cancel spending form")
 @pytest.mark.spending
 def test_cancel_spending_form(main_page: MainPage, new_spending_page: NewSpendingPage, login):
     main_page.history_of_spending_title.should_be_visible()
@@ -36,6 +42,8 @@ def test_cancel_spending_form(main_page: MainPage, new_spending_page: NewSpendin
     new_spending_page.title.should_not_be_visible()
     main_page.history_of_spending_title.should_be_visible()
 
+@allure.feature("Spending")
+@allure.story("Spending form without amount")
 @pytest.mark.spending
 def test_spending_form_without_amount(main_page: MainPage, new_spending_page: NewSpendingPage, login):
     main_page.history_of_spending_title.should_be_visible()
@@ -45,6 +53,8 @@ def test_spending_form_without_amount(main_page: MainPage, new_spending_page: Ne
     new_spending_page.add_button.click()
     new_spending_page.error_amount_message.should_be_visible()
 
+@allure.feature("Spending")
+@allure.story("Statistics")
 @pytest.mark.spending
 def test_statistics_visible(main_page: MainPage, login):
     main_page.history_of_spending_title.should_be_visible()
@@ -53,6 +63,8 @@ def test_statistics_visible(main_page: MainPage, login):
     main_page.statistics_title.should_have_text("Statistics")
     main_page.statistics_canvas.should_be_visible()
 
+@allure.feature("Spending")
+@allure.story("Spending appears in history")
 @pytest.mark.spending
 def test_spending_appears_in_history(main_page, add_spending, spend_api, spendings_manager,login):
     spend_api, created_spendings = spendings_manager
@@ -62,6 +74,8 @@ def test_spending_appears_in_history(main_page, add_spending, spend_api, spendin
     main_page.reload()
     main_page.first_row_description.should_have_text(description)
 
+@allure.feature("Spending")
+@allure.story("Delete spending UI")
 @pytest.mark.spending
 def test_delete_spending_ui(main_page, add_spending, spend_api, spendings_manager, login):
     spend_api, created_spendings = spendings_manager
@@ -76,6 +90,8 @@ def test_delete_spending_ui(main_page, add_spending, spend_api, spendings_manage
     main_page.delete_button_dialog.click()
     main_page.no_spending_text.should_be_visible()
 
+@allure.feature("Spending")
+@allure.story("Search spending")
 @pytest.mark.spending
 def test_search_spending_by_description(main_page, add_spending, spend_api, spendings_manager, login):
     spend_api, created_spendings = spendings_manager
@@ -88,6 +104,8 @@ def test_search_spending_by_description(main_page, add_spending, spend_api, spen
     main_page.press_enter()
     main_page.first_row_description.should_have_text(description)
 
+@allure.feature("Spending")
+@allure.story("Edit spending")
 @pytest.mark.spending
 def test_edit_spending_description(main_page, add_spending, new_spending_page, spend_api, spendings_manager, login):
     spend_api, created_spendings = spendings_manager
@@ -103,6 +121,8 @@ def test_edit_spending_description(main_page, add_spending, new_spending_page, s
     created_spendings.append(new_desc)
     main_page.first_row_description.should_have_text(new_desc)
 
+@allure.feature("Spending")
+@allure.story("Filter spending")
 @pytest.mark.spending
 def test_filter_spending_by_category(main_page, add_spending, spend_api, spendings_manager):
     spend_api, created_spendings = spendings_manager
@@ -114,6 +134,8 @@ def test_filter_spending_by_category(main_page, add_spending, spend_api, spendin
     main_page.press_enter()
     main_page.first_row_description.should_have_text(description)
 
+@allure.feature("Spending")
+@allure.story("Spending amount")
 @pytest.mark.spending
 def test_spending_negative_amount(main_page, new_spending_page, spendings_manager):
     main_page.navbar.open_new_spending_page()
@@ -121,6 +143,8 @@ def test_spending_negative_amount(main_page, new_spending_page, spendings_manage
     new_spending_page.add_button.click()
     new_spending_page.error_amount_message.should_be_visible()
 
+@allure.feature("Spending")
+@allure.story("Spending category")
 @pytest.mark.spending
 def test_spending_empty_category(main_page, new_spending_page, spendings_manager):
     main_page.navbar.open_new_spending_page()
@@ -129,6 +153,8 @@ def test_spending_empty_category(main_page, new_spending_page, spendings_manager
     new_spending_page.add_button.click()
     new_spending_page.error_no_category_message.should_be_visible()
 
+@allure.feature("Spending")
+@allure.story("Duplicate spending")
 @pytest.mark.spending
 def test_spending_duplicate(main_page, add_spending, spend_api, spendings_manager):
     spend_api, created_spendings = spendings_manager
@@ -141,6 +167,8 @@ def test_spending_duplicate(main_page, add_spending, spend_api, spendings_manage
     main_page.first_row_description.should_have_text(desc)
     main_page.second_row_description.should_have_text(desc)
 
+@allure.feature("Spending")
+@allure.story("Delete spending UI")
 @pytest.mark.spending
 def test_delete_multiple_spendings(main_page, add_spending, spend_api, spendings_manager):
     spend_api, created_spendings = spendings_manager
@@ -157,6 +185,8 @@ def test_delete_multiple_spendings(main_page, add_spending, spend_api, spendings
     main_page.delete_button_dialog.click()
     main_page.no_spending_text.should_be_visible()
 
+@allure.feature("Spending")
+@allure.story("Search spending")
 @pytest.mark.spending
 def test_spending_search_no_results(main_page, add_spending, spend_api, spendings_manager):
     spend_api, created_spendings = spendings_manager
@@ -167,6 +197,8 @@ def test_spending_search_no_results(main_page, add_spending, spend_api, spending
     main_page.press_enter()
     main_page.no_spending_text.should_be_visible()
 
+@allure.feature("Spending")
+@allure.story("Reload spending")
 @pytest.mark.spending
 def test_reload_persists_spendings(main_page, add_spending, spend_api, spendings_manager):
     spend_api, created_spendings = spendings_manager
@@ -178,6 +210,8 @@ def test_reload_persists_spendings(main_page, add_spending, spend_api, spendings
     main_page.reload()
     main_page.first_row_description.should_have_text(desc)
 
+@allure.feature("Spending")
+@allure.story("Legend")
 @pytest.mark.spending
 def test_legend_visible_with_spending(main_page, add_spending, spend_api, spendings_manager):
     spend_api, created_spendings = spendings_manager

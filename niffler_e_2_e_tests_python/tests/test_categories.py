@@ -1,8 +1,11 @@
+import allure
 import pytest
 
 from ..pages.main_page import MainPage
 from ..pages.profile_page import ProfilePage
 
+@allure.feature("Categories")
+@allure.story("Add category")
 @pytest.mark.categories
 def test_add_category(main_page: MainPage, profile_page: ProfilePage, login, spend_db, add_and_cleanup_category):
     main_page.history_of_spending_title.should_be_visible()
@@ -16,6 +19,8 @@ def test_add_category(main_page: MainPage, profile_page: ProfilePage, login, spe
     assert category_db[0].username == login[0]
 
 
+@allure.feature("Categories")
+@allure.story("Edit category")
 @pytest.mark.categories
 def test_edit_category_db(main_page: MainPage, profile_page: ProfilePage, login, spend_db, add_and_cleanup_category):
     main_page.navbar.open_profile_page()
@@ -32,6 +37,8 @@ def test_edit_category_db(main_page: MainPage, profile_page: ProfilePage, login,
     assert new_cat[0].name == new_name
     assert new_cat[0].username == login[0]
 
+@allure.feature("Categories")
+@allure.story("Archive category")
 @pytest.mark.categories
 def test_archive_category_db(main_page: MainPage, profile_page: ProfilePage, login, spend_db, add_and_cleanup_category):
     main_page.navbar.open_profile_page()

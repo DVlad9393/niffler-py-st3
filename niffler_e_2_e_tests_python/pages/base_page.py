@@ -22,5 +22,6 @@ class BasePage:
         with allure.step(f'Getting current url = "{url}"'):
             return url
 
-    def press_enter(self):
-        self.page.keyboard.press('Enter')
+    def press_enter(self) -> None:
+        with allure.step('Pressing Enter'):
+            self.page.keyboard.press('Enter')
