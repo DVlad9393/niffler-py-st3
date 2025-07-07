@@ -31,12 +31,12 @@ class SpendDB:
         Не подходит для отправки в базу — только для логов и отчётов!
         """
         try:
-            # dict params: statement with %(name)s
+
             if isinstance(parameters, dict):
-                # Кавычки для строк
+
                 params = {k: (f"'{v}'" if isinstance(v, str) else v) for k, v in parameters.items()}
                 return statement % params
-            # tuple/list params: statement with %s
+
             if isinstance(parameters, (tuple, list)):
                 params = tuple(f"'{v}'" if isinstance(v, str) else v for v in parameters)
                 return statement % params
