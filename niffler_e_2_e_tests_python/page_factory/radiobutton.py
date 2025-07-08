@@ -7,7 +7,7 @@ from ..page_factory.base_component import BaseComponent
 class RadioButton(BaseComponent):
     @property
     def type_of(self) -> str:
-        return 'radiobutton'
+        return "radiobutton"
 
     def hover(self, **kwargs) -> None:
         with allure.step(f'Hovering over {self.type_of} with name "{self.name}"'):
