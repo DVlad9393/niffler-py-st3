@@ -13,7 +13,15 @@ bash docker-compose-dev.sh
 
 Запустить тесты с allure и удалением предыдущих результатов:
 cd niffler_e_2_e_tests_python
-rm -rf allure-results && python3 -m pytest niffler_e_2_e_tests_python  --alluredir=allure-results
+poetry run pytest -k "test_archive_category_db" --alluredir allure-results --clean-alluredir
 
 Открыть отчёт:
 allure serve
+
+Запуск линтеров:
+# without fix
+poetry run ruff check .  
+# with fix
+poetry run ruff check . --fix 
+# format
+poetry run ruff format . 

@@ -7,7 +7,7 @@ from ..page_factory.base_component import BaseComponent
 class СheckBox(BaseComponent):
     @property
     def type_of(self) -> str:
-        return 'checkbox'
+        return "checkbox"
 
     def hover(self, **kwargs) -> None:
         with allure.step(f'Hovering over {self.type_of} with name "{self.name}"'):

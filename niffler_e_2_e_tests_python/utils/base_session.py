@@ -3,9 +3,9 @@ import json
 import allure
 import httpx
 
+
 def _pretty_headers(headers: dict) -> str:
-    """
-    Форматирует словарь HTTP-заголовков в удобочитаемую строку для отчёта или логов.
+    """Форматирует словарь HTTP-заголовков в удобочитаемую строку для отчёта или логов.
 
     Каждый заголовок выводится с отступом в 4 пробела, один заголовок — одна строка.
 
@@ -23,9 +23,9 @@ def _pretty_headers(headers: dict) -> str:
     """
     return "\n".join(f"    {k}: {v}" for k, v in headers.items())
 
+
 def _pretty_body(body, content_type="application/json"):
-    """
-    Форматирует тело HTTP-запроса или ответа для читабельного вывода.
+    """Форматирует тело HTTP-запроса или ответа для читабельного вывода.
 
     - Если тело — JSON (по Content-Type или явно), форматирует с отступами.
     - Если тело — bytes, декодирует в строку.
@@ -52,9 +52,9 @@ def _pretty_body(body, content_type="application/json"):
     except Exception:
         return str(body)
 
+
 def dump_httpx_response(response: httpx.Response) -> str:
-    """
-    Формирует читаемое текстовое представление HTTP-запроса и ответа для вложения в Allure-отчёт.
+    """Формирует читаемое текстовое представление HTTP-запроса и ответа для вложения в Allure-отчёт.
 
     - Форматирует URL, метод, заголовки и тело запроса.
     - Заголовки отображаются по одному на строку.
@@ -89,21 +89,23 @@ def dump_httpx_response(response: httpx.Response) -> str:
         f"Body:\n{resp_pretty}\n"
     )
 
+
 class AllureHttpxClient(httpx.Client):
     """httpx.Client с автоматическим логированием всех запросов в Allure."""
+
     def send(self, request, **kwargs):
         response = super().send(request, **kwargs)
         allure.attach(
             dump_httpx_response(response),
             f"{request.method} {request.url}",
-            attachment_type=allure.attachment_type.TEXT
+            attachment_type=allure.attachment_type.TEXT,
         )
         return response
 
+
 class BaseSession:
     def __init__(self, base_url: str):
-        """
-        Инициализация базовой сессии HTTP-клиента с Allure-логированием.
+        """Инициализация базовой сессии HTTP-клиента с Allure-логированием.
 
         :param base_url: Базовый URL для всех HTTP-запросов.
         """
@@ -111,8 +113,7 @@ class BaseSession:
         self.client = AllureHttpxClient(base_url=self.base_url)
 
     def get(self, url: str, **kwargs) -> httpx.Response:
-        """
-        Выполняет HTTP GET-запрос.
+        """Выполняет HTTP GET-запрос.
 
         :param url: Относительный URL-адрес для запроса.
         :param kwargs: Дополнительные параметры для httpx.Client.get (например, params, headers).
@@ -121,8 +122,7 @@ class BaseSession:
         return self.client.get(url, **kwargs)
 
     def post(self, url: str, **kwargs) -> httpx.Response:
-        """
-        Выполняет HTTP POST-запрос.
+        """Выполняет HTTP POST-запрос.
 
         :param url: Относительный URL-адрес для запроса.
         :param kwargs: Дополнительные параметры для httpx.Client.post (например, json, data, headers).
@@ -131,8 +131,7 @@ class BaseSession:
         return self.client.post(url, **kwargs)
 
     def patch(self, url: str, **kwargs) -> httpx.Response:
-        """
-        Выполняет HTTP PATCH-запрос.
+        """Выполняет HTTP PATCH-запрос.
 
         :param url: Относительный URL-адрес для запроса.
         :param kwargs: Дополнительные параметры для httpx.Client.patch (например, json, data, headers).
@@ -141,8 +140,7 @@ class BaseSession:
         return self.client.patch(url, **kwargs)
 
     def delete(self, url: str, **kwargs) -> httpx.Response:
-        """
-        Выполняет HTTP DELETE-запрос.
+        """Выполняет HTTP DELETE-запрос.
 
         :param url: Относительный URL-адрес для запроса.
         :param kwargs: Дополнительные параметры для httpx.Client.delete (например, params, headers).
@@ -151,7 +149,5 @@ class BaseSession:
         return self.client.delete(url, **kwargs)
 
     def close(self) -> None:
-        """
-        Закрывает HTTP-клиент и освобождает все сетевые ресурсы.
-        """
+        """Закрывает HTTP-клиент и освобождает все сетевые ресурсы."""
         self.client.close()

@@ -6,7 +6,7 @@ from ..page_factory.base_component import BaseComponent
 class Button(BaseComponent):
     @property
     def type_of(self) -> str:
-        return 'button'
+        return "button"
 
     def hover(self, **kwargs) -> None:
         with allure.step(f'Hovering over {self.type_of} with name "{self.name}"'):

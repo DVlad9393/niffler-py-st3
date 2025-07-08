@@ -3,6 +3,7 @@ import pytest
 
 from ..pages.login_page import LoginPage
 
+
 @allure.feature("Authentication")
 @allure.story("Registration Flow")
 @pytest.mark.register

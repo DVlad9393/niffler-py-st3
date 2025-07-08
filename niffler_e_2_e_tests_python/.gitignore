@@ -70,6 +70,10 @@ Byte-compiled / optimized / DLL files
  # Logs
  *.log
 
+# Allure
+allure-results
+/allure-results/
+
  # Local env files
  .env
  .env.* 

@@ -15,6 +15,7 @@ def test_success_login(login_page: LoginPage, main_page: MainPage, envs):
     current_url = main_page.get_current_url()
     assert current_url == envs.base_url
 
+
 @allure.feature("Authentication")
 @allure.story("Wrong Password Login")
 @pytest.mark.login
@@ -25,7 +26,3 @@ def test_wrong_password_login(login_page: LoginPage, envs):
     login_page.incorrect_login_or_password_text.should_be_visible()
     current_url = login_page.get_current_url()
     assert current_url == envs.base_error_url
-
-
-
-
