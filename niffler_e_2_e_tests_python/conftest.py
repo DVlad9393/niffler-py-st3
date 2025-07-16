@@ -16,6 +16,7 @@ from niffler_e_2_e_tests_python.models.config import Envs
 from niffler_e_2_e_tests_python.models.spend import CategoryDTO, SpendAdd, SpendDTO
 from niffler_e_2_e_tests_python.pages.login_page import LoginPage
 from niffler_e_2_e_tests_python.pages.profile_page import ProfilePage
+from niffler_e_2_e_tests_python.utils.auth_client import AuthClient
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from datetime import UTC, datetime
@@ -110,6 +111,8 @@ def envs() -> Envs:
         base_url=os.getenv("BASE_URL"),
         base_error_url=os.getenv("BASE_ERROR_URL"),
         spend_db_url=os.getenv("SPEND_DB_URL"),
+        auth_url=os.getenv("AUTH_URL"),
+        auth_secret=os.getenv("AUTH_SECRET"),
     )
     allure.attach(
         env_instance.model_dump_json(indent=2),
@@ -247,8 +250,15 @@ def login(login_page: LoginPage, main_page: MainPage, envs) -> tuple[str, str, s
     return envs.username, envs.password, token
 
 
+@pytest.fixture(scope="session")
+def api_auth_token(envs) -> str:
+    """Фикстура для получения access_token для API-тестов (через AuthClient, минуя браузер)."""
+    client = AuthClient(envs)
+    return client.auth(envs.username, envs.password)
+
+
 @pytest.fixture
-def spend_api(login, envs) -> Generator[SpendApiClient, Any]:
+def spend_api(api_auth_token, envs) -> Generator[SpendApiClient, Any]:
     """Фикстура для создания API клиента SpendApiClient с авторизацией.
 
     :param login: Кортеж с логином и токеном.
@@ -256,7 +266,7 @@ def spend_api(login, envs) -> Generator[SpendApiClient, Any]:
     :yields: Экземпляр SpendApiClient.
     После завершения теста сессия закрывается.
     """
-    token = login[2]
+    token = api_auth_token
     session = BaseSession(envs.api_url)
     api = SpendApiClient(session, token)
     yield api
@@ -264,19 +274,17 @@ def spend_api(login, envs) -> Generator[SpendApiClient, Any]:
 
 
 @pytest.fixture
-def add_spending(
-    spend_api, category, login
-) -> Callable[[Any, int, Any, str], SpendDTO]:
+def add_spending(spend_api, category, envs) -> Callable[[Any, int, Any, str], SpendDTO]:
     """Фикстура-обёртка для добавления новой траты.
 
     :param spend_api: API клиент SpendApiClient.
     :param category: Объект категории.
-    :param login: Кортеж (username, ...).
+    :param envs: данные окружения.
     :return: Внутренняя функция _add_spending для добавления траты через API.
     """
 
     def _add_spending(description, amount=100, category_name=None, currency="RUB"):
-        username = login[0]
+        username = envs.username
 
         category_obj = category
         if category_name:
@@ -308,14 +316,14 @@ def add_spending(
 
 
 @pytest.fixture
-def spendings_manager(login, envs) -> Generator[Any, Any]:
+def spendings_manager(api_auth_token, envs) -> Generator[Any, Any]:
     """Фикстура-менеджер для создания и очистки трат. После завершения теста удаляет созданные траты.
 
-    :param login: Кортеж с логином и токеном.
+    :param api_auth_token: Токен.
     :param envs: Конфигурация окружения.
     :yields: Кортеж (spend_api, created_spendings).
     """
-    token = login[2]
+    token = api_auth_token
     session = BaseSession(envs.api_url)
     spend_api = SpendApiClient(session, token)
     created_spendings = []
@@ -340,17 +348,17 @@ def spend_db(envs) -> SpendDB:
 
 
 @pytest.fixture()
-def category(login, envs, spend_db) -> Generator[CategoryDTO, Any]:
+def category(api_auth_token, envs, spend_db) -> Generator[CategoryDTO, Any]:
     """Фикстура для получения/создания тестовой категории (по умолчанию 'TestCat').
     После завершения теста удаляет созданную категорию из БД.
 
-    :param login: Кортеж с логином и токеном.
+    :param api_auth_token: Токен.
     :param envs: Конфигурация окружения.
     :param spend_db: Объект доступа к БД.
     :yields: Экземпляр CategoryDTO.
     """
 
-    token = login[2]
+    token = api_auth_token
     session = BaseSession(envs.api_url)
     api = CategoriesApiClient(session, token)
     category_name = "TestCat"
