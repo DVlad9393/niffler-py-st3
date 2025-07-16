@@ -19,7 +19,14 @@ from ..pages.new_spending_page import NewSpendingPage
     ],
 )
 def test_add_spending_ui(
-    main_page, new_spending_page, spend_api, desc, amount, currency, spendings_manager
+    main_page,
+    new_spending_page,
+    spend_api,
+    desc,
+    amount,
+    currency,
+    spendings_manager,
+    login,
 ):
     spend_api, created_spendings = spendings_manager
     main_page.history_of_spending_title.should_be_visible()
@@ -151,7 +158,7 @@ def test_edit_spending_description(
 @allure.story("Filter spending")
 @pytest.mark.spending
 def test_filter_spending_by_category(
-    main_page, add_spending, spend_api, spendings_manager
+    main_page, add_spending, spend_api, spendings_manager, login
 ):
     spend_api, created_spendings = spendings_manager
     description = "Car Wash"
@@ -166,7 +173,9 @@ def test_filter_spending_by_category(
 @allure.feature("Spending")
 @allure.story("Spending amount")
 @pytest.mark.spending
-def test_spending_negative_amount(main_page, new_spending_page, spendings_manager):
+def test_spending_negative_amount(
+    main_page, new_spending_page, spendings_manager, login
+):
     main_page.navbar.open_new_spending_page()
     new_spending_page.amount_input.fill("-10")
     new_spending_page.add_button.click()
@@ -176,7 +185,9 @@ def test_spending_negative_amount(main_page, new_spending_page, spendings_manage
 @allure.feature("Spending")
 @allure.story("Spending category")
 @pytest.mark.spending
-def test_spending_empty_category(main_page, new_spending_page, spendings_manager):
+def test_spending_empty_category(
+    main_page, new_spending_page, spendings_manager, login
+):
     main_page.navbar.open_new_spending_page()
     new_spending_page.amount_input.fill("55")
     new_spending_page.category_input.fill("")
@@ -187,7 +198,9 @@ def test_spending_empty_category(main_page, new_spending_page, spendings_manager
 @allure.feature("Spending")
 @allure.story("Duplicate spending")
 @pytest.mark.spending
-def test_spending_duplicate(main_page, add_spending, spend_api, spendings_manager):
+def test_spending_duplicate(
+    main_page, add_spending, spend_api, spendings_manager, login
+):
     spend_api, created_spendings = spendings_manager
     desc = "DuplicateTest"
     add_spending(desc, 50)
@@ -203,7 +216,7 @@ def test_spending_duplicate(main_page, add_spending, spend_api, spendings_manage
 @allure.story("Delete spending UI")
 @pytest.mark.spending
 def test_delete_multiple_spendings(
-    main_page, add_spending, spend_api, spendings_manager
+    main_page, add_spending, spend_api, spendings_manager, login
 ):
     spend_api, created_spendings = spendings_manager
     desc1, desc2 = "ToDel1", "ToDel2"
@@ -224,7 +237,7 @@ def test_delete_multiple_spendings(
 @allure.story("Search spending")
 @pytest.mark.spending
 def test_spending_search_no_results(
-    main_page, add_spending, spend_api, spendings_manager
+    main_page, add_spending, spend_api, spendings_manager, login
 ):
     spend_api, created_spendings = spendings_manager
     add_spending("SomeDesc", 123)
@@ -239,7 +252,7 @@ def test_spending_search_no_results(
 @allure.story("Reload spending")
 @pytest.mark.spending
 def test_reload_persists_spendings(
-    main_page, add_spending, spend_api, spendings_manager
+    main_page, add_spending, spend_api, spendings_manager, login
 ):
     spend_api, created_spendings = spendings_manager
     desc = "ReloadPersist"
@@ -255,7 +268,7 @@ def test_reload_persists_spendings(
 @allure.story("Legend")
 @pytest.mark.spending
 def test_legend_visible_with_spending(
-    main_page, add_spending, spend_api, spendings_manager
+    main_page, add_spending, spend_api, spendings_manager, login
 ):
     spend_api, created_spendings = spendings_manager
     desc = "WithLegend"

@@ -12,7 +12,8 @@ dependencies = [
     "sqlalchemy (>=2.0.41,<3.0.0)",
     "sqlmodel (>=0.0.24,<0.0.25)",
     "playwright (>=1.52.0,<2.0.0)",
-    "psycopg2-binary (>=2.9.10,<3.0.0)"
+    "psycopg2-binary (>=2.9.10,<3.0.0)",
+    "requests (>=2.32.4,<3.0.0)"
 ]
 
 [build-system]

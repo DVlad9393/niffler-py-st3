@@ -18,6 +18,8 @@ class Envs(BaseModel):
     :type base_error_url: StrictStr
     :param spend_db_url: URL для подключения к базе данных трат.
     :type spend_db_url: StrictStr
+    :param auth_url: URL для авторизации.
+    :type auth_url: StrictStr
     """
 
     api_url: StrictStr
@@ -27,3 +29,5 @@ class Envs(BaseModel):
     base_url: StrictStr
     base_error_url: StrictStr
     spend_db_url: StrictStr
+    auth_url: StrictStr
+    auth_secret: StrictStr
