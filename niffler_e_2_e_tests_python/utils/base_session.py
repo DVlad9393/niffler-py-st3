@@ -53,7 +53,7 @@ def _pretty_body(body, content_type="application/json"):
         return str(body)
 
 
-def dump_httpx_response(response: httpx.Response) -> str:
+def _dump_httpx_response(response: httpx.Response) -> str:
     """Формирует читаемое текстовое представление HTTP-запроса и ответа для вложения в Allure-отчёт.
 
     - Форматирует URL, метод, заголовки и тело запроса.
@@ -96,7 +96,7 @@ class AllureHttpxClient(httpx.Client):
     def send(self, request, **kwargs):
         response = super().send(request, **kwargs)
         allure.attach(
-            dump_httpx_response(response),
+            _dump_httpx_response(response),
             f"{request.method} {request.url}",
             attachment_type=allure.attachment_type.TEXT,
         )

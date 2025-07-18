@@ -12,7 +12,7 @@ class Envs(BaseModel):
     :type password: StrictStr
     :param base_auth_url: URL для авторизации.
     :type base_auth_url: StrictStr
-    :param base_url: Главный URL интерфейса приложения.
+    :param base_url: URL главной страницы интерфейса приложения.
     :type base_url: StrictStr
     :param base_error_url: URL, на который происходит редирект при ошибке входа.
     :type base_error_url: StrictStr
@@ -20,6 +20,10 @@ class Envs(BaseModel):
     :type spend_db_url: StrictStr
     :param auth_url: URL для авторизации.
     :type auth_url: StrictStr
+    :param auth_secret: Секрет для авторизации.
+    :type auth_secret: StrictStr
+    :param frontend_url: Базовый URL интерфейса приложения.
+    :type frontend_url: StrictStr
     """
 
     api_url: StrictStr
@@ -31,3 +35,4 @@ class Envs(BaseModel):
     spend_db_url: StrictStr
     auth_url: StrictStr
     auth_secret: StrictStr
+    frontend_url: StrictStr
