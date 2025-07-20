@@ -73,7 +73,8 @@ Byte-compiled / optimized / DLL files
 # Allure
 allure-results
 /allure-results/
+/allure-report/
 
  # Local env files
  .env
- .env.* 
+ .env.*

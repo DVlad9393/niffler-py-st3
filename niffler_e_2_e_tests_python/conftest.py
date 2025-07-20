@@ -10,7 +10,9 @@ from allure_commons.types import AttachmentType
 from dotenv import load_dotenv
 from pytest import Item
 
-# noqa: F401
+from niffler_e_2_e_tests_python.fixtures.auth_fixtures import (  # noqa: F401
+    api_auth_token,
+)
 from niffler_e_2_e_tests_python.fixtures.client_fixtures import (  # noqa: F401
     category_api,
     spend_api,

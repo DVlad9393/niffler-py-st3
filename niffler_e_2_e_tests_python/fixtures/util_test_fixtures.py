@@ -157,7 +157,7 @@ def create_test_spend_api(
     """Создаёт тестовую трату и удаляет после теста."""
     spend = SpendAdd(
         id=None,
-        spendDate=datetime.now(UTC),
+        spendDate=(datetime.now(UTC) - timedelta(minutes=1)),
         category=create_test_category_api,
         currency="RUB",
         amount=150,

@@ -15,6 +15,17 @@ bash docker-compose-dev.sh
 cd niffler_e_2_e_tests_python
 poetry run pytest -k "test_archive_category_db" --alluredir allure-results --clean-alluredir
 
+В проекте добавлен bash-скрипт run_allure.sh
+Баш скрипт позволяет сформировать отчет allure c вложениями запросов и ответов API в шагах, оформленных с CSS стилями. 
+
+Выполнить один раз
+chmod +x run_allure.sh # сделать скрипт исполняемым
+
+# Доступные команды: 
+ - Все тесты: ./run_allure.sh
+ - Один тест: ./run_allure.sh test_add_duplicate_category_api
+ - Тесты по группе: ./run_allure.sh api
+
 Открыть отчёт:
 allure serve
 

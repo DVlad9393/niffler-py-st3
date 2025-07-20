@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import allure
 import pytest
@@ -71,7 +71,7 @@ def test_add_spending_api(
     """Проверка добавления траты."""
     spend = SpendAdd(
         id=None,
-        spendDate=datetime.now(UTC),
+        spendDate=(datetime.now(UTC) - timedelta(minutes=1)),
         category=create_test_category_api,
         currency="RUB",
         amount=123,
@@ -102,7 +102,7 @@ def test_delete_spending_api(
     """Проверка удаления траты."""
     spend = SpendAdd(
         id=None,
-        spendDate=datetime.now(UTC),
+        spendDate=(datetime.now(UTC) - timedelta(minutes=1)),
         category=create_test_category_api,
         currency="RUB",
         amount=150,
@@ -135,7 +135,7 @@ def test_add_spending_invalid_currency_api(
     """Проверка ошибки при добавлении траты с невалидной валютой."""
     spend = SpendAdd(
         id=None,
-        spendDate=datetime.now(UTC),
+        spendDate=(datetime.now(UTC) - timedelta(minutes=1)),
         category=create_test_category_api,
         currency="FAKE",
         amount=50,
