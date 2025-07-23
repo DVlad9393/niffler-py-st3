@@ -13,7 +13,10 @@ dependencies = [
     "sqlmodel (>=0.0.24,<0.0.25)",
     "playwright (>=1.52.0,<2.0.0)",
     "psycopg2-binary (>=2.9.10,<3.0.0)",
-    "requests (>=2.32.4,<3.0.0)"
+    "requests (>=2.32.4,<3.0.0)",
+    "curlify (>=3.0.0,<4.0.0)",
+    "pkce (>=1.0.3,<2.0.0)",
+    "jinja2 (>=3.1.6,<4.0.0)",
 ]
 
 [build-system]
@@ -47,7 +50,8 @@ markers = [
     "login: tests related to login functionality",
     "spending: tests related to spending",
     "register: tests related to register functionality",
-    "categories: tests related to categories"]
+    "categories: tests related to categories",
+    "api: tests related to api"]
 
 [tool.ruff]
 target-version = "py313"
@@ -91,6 +95,7 @@ ignore = [
     "D102",      # Missing docstring in public method
     "D103",      # Missing docstring in public function
     "D107",      # Missing docstring in __init__
+    "F811",      # redefinition of unused name from line
 ]
 
 [tool.ruff.format]

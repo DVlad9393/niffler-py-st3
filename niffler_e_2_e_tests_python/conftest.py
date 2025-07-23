@@ -1,8 +1,7 @@
 import os
 import sys
-import uuid
 import warnings
-from collections.abc import Callable, Generator
+from collections.abc import Generator
 from typing import Any
 
 import allure
@@ -11,23 +10,37 @@ from allure_commons.types import AttachmentType
 from dotenv import load_dotenv
 from pytest import Item
 
-from niffler_e_2_e_tests_python.databases.spend_db import SpendDB
+from niffler_e_2_e_tests_python.fixtures.auth_fixtures import (  # noqa: F401
+    api_auth_token,
+)
+from niffler_e_2_e_tests_python.fixtures.client_fixtures import (  # noqa: F401
+    category_api,
+    spend_api,
+    spend_db,
+)
+from niffler_e_2_e_tests_python.fixtures.pages_fixtures import (  # noqa: F401
+    browser_page,
+    login_page,
+    main_page,
+    new_spending_page,
+    profile_page,
+)
+from niffler_e_2_e_tests_python.fixtures.util_test_fixtures import (  # noqa: F401
+    add_and_cleanup_category,
+    add_spending,
+    category,
+    create_test_category_api,
+    create_test_spend_api,
+    spendings_manager,
+)
 from niffler_e_2_e_tests_python.models.config import Envs
-from niffler_e_2_e_tests_python.models.spend import CategoryDTO, SpendAdd, SpendDTO
 from niffler_e_2_e_tests_python.pages.login_page import LoginPage
-from niffler_e_2_e_tests_python.pages.profile_page import ProfilePage
-from niffler_e_2_e_tests_python.utils.auth_client import AuthClient
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from datetime import UTC, datetime
 
 from faker import Faker
-from playwright.sync_api import Page, sync_playwright
 
 from niffler_e_2_e_tests_python.pages.main_page import MainPage
-from niffler_e_2_e_tests_python.pages.new_spending_page import NewSpendingPage
-from niffler_e_2_e_tests_python.utils.base_session import BaseSession
-from niffler_e_2_e_tests_python.utils.utils import CategoriesApiClient, SpendApiClient
 
 fake = Faker()
 
@@ -113,6 +126,7 @@ def envs() -> Envs:
         spend_db_url=os.getenv("SPEND_DB_URL"),
         auth_url=os.getenv("AUTH_URL"),
         auth_secret=os.getenv("AUTH_SECRET"),
+        frontend_url=os.getenv("FRONTEND_URL"),
     )
     allure.attach(
         env_instance.model_dump_json(indent=2),
@@ -120,82 +134,6 @@ def envs() -> Envs:
         attachment_type=AttachmentType.JSON,
     )
     return env_instance
-
-
-@pytest.fixture(scope="function", params=["chromium"])
-def browser_page(request) -> Generator[Any, Any]:
-    """Фикстура для создания страницы браузера Playwright.
-
-    :param request: Параметризировано браузером ('chromium', по умолчанию).
-    :yields: Экземпляр страницы Playwright Page.
-    Делает скриншот и прикладывает видео после завершения теста.
-    """
-    browser_name = request.param
-    with sync_playwright() as playwright:
-        browser = getattr(playwright, browser_name).launch(
-            headless=False, args=["--start-maximized", "--window-position=0,0"]
-        )
-        context = browser.new_context(
-            viewport={"width": 1600, "height": 900}, record_video_dir="allure-results/"
-        )
-        page = context.new_page()
-
-        yield page
-
-        allure.attach(
-            page.screenshot(),
-            name="screenshot",
-            attachment_type=allure.attachment_type.PNG,
-        )
-
-        video = page.video.path()
-        page.close()
-        context.close()
-        allure.attach.file(
-            video,
-            name="video",
-            attachment_type=allure.attachment_type.WEBM,
-        )
-
-
-@pytest.fixture(scope="function")
-def main_page(browser_page: Page) -> MainPage:
-    """Фикстура возвращает объект главной страницы (MainPage) для работы с UI.
-
-    :param browser_page: Экземпляр страницы браузера.
-    :return: Экземпляр MainPage.
-    """
-    return MainPage(browser_page)
-
-
-@pytest.fixture(scope="function")
-def login_page(browser_page: Page) -> LoginPage:
-    """Фикстура возвращает объект страницы логина (LoginPage).
-
-    :param browser_page: Экземпляр страницы браузера.
-    :return: Экземпляр LoginPage.
-    """
-    return LoginPage(browser_page)
-
-
-@pytest.fixture(scope="function")
-def new_spending_page(browser_page: Page) -> NewSpendingPage:
-    """Фикстура возвращает объект страницы создания новой траты (NewSpendingPage).
-
-    :param browser_page: Экземпляр страницы браузера.
-    :return: Экземпляр NewSpendingPage.
-    """
-    return NewSpendingPage(browser_page)
-
-
-@pytest.fixture(scope="function")
-def profile_page(browser_page: Page) -> ProfilePage:
-    """Фикстура возвращает объект страницы профиля (ProfilePage).
-
-    :param browser_page: Экземпляр страницы браузера.
-    :return: Экземпляр ProfilePage.
-    """
-    return ProfilePage(browser_page)
 
 
 @pytest.fixture(scope="function")
@@ -248,146 +186,3 @@ def login(login_page: LoginPage, main_page: MainPage, envs) -> tuple[str, str, s
 
     allure.attach(token, name="token.txt", attachment_type=AttachmentType.TEXT)
     return envs.username, envs.password, token
-
-
-@pytest.fixture(scope="session")
-def api_auth_token(envs) -> str:
-    """Фикстура для получения access_token для API-тестов (через AuthClient, минуя браузер)."""
-    client = AuthClient(envs)
-    return client.auth(envs.username, envs.password)
-
-
-@pytest.fixture
-def spend_api(api_auth_token, envs) -> Generator[SpendApiClient, Any]:
-    """Фикстура для создания API клиента SpendApiClient с авторизацией.
-
-    :param login: Кортеж с логином и токеном.
-    :param envs: Конфигурация окружения.
-    :yields: Экземпляр SpendApiClient.
-    После завершения теста сессия закрывается.
-    """
-    token = api_auth_token
-    session = BaseSession(envs.api_url)
-    api = SpendApiClient(session, token)
-    yield api
-    session.close()
-
-
-@pytest.fixture
-def add_spending(spend_api, category, envs) -> Callable[[Any, int, Any, str], SpendDTO]:
-    """Фикстура-обёртка для добавления новой траты.
-
-    :param spend_api: API клиент SpendApiClient.
-    :param category: Объект категории.
-    :param envs: данные окружения.
-    :return: Внутренняя функция _add_spending для добавления траты через API.
-    """
-
-    def _add_spending(description, amount=100, category_name=None, currency="RUB"):
-        username = envs.username
-
-        category_obj = category
-        if category_name:
-            all_categories = spend_api.session.get(
-                "/api/categories/all", headers=spend_api.headers
-            ).json()
-            match = next(
-                (c for c in all_categories if c["name"] == category_name), None
-            )
-            if not match:
-                match = spend_api.session.post(
-                    "/api/categories/add",
-                    json={"name": category_name, "username": username},
-                    headers=spend_api.headers,
-                ).json()
-            category_obj = CategoryDTO(**match)
-        spend = SpendAdd(
-            id=str(uuid.uuid4()),
-            spendDate=datetime.now(UTC),
-            category=category_obj,
-            currency=currency,
-            amount=amount,
-            description=description,
-        )
-
-        return spend_api.add_spending(spend, category_obj, username)
-
-    return _add_spending
-
-
-@pytest.fixture
-def spendings_manager(api_auth_token, envs) -> Generator[Any, Any]:
-    """Фикстура-менеджер для создания и очистки трат. После завершения теста удаляет созданные траты.
-
-    :param api_auth_token: Токен.
-    :param envs: Конфигурация окружения.
-    :yields: Кортеж (spend_api, created_spendings).
-    """
-    token = api_auth_token
-    session = BaseSession(envs.api_url)
-    spend_api = SpendApiClient(session, token)
-    created_spendings = []
-
-    yield spend_api, created_spendings
-
-    spends = spend_api.get_all_spends()
-    ids_to_delete = [s.id for s in spends if s.description in created_spendings]
-    if ids_to_delete:
-        spend_api.delete_spending(ids_to_delete)
-    session.close()
-
-
-@pytest.fixture(scope="session")
-def spend_db(envs) -> SpendDB:
-    """Фикстура для подключения к базе данных трат.
-
-    :param envs: Конфигурация окружения.
-    :return: Экземпляр SpendDB.
-    """
-    return SpendDB(envs.spend_db_url)
-
-
-@pytest.fixture()
-def category(api_auth_token, envs, spend_db) -> Generator[CategoryDTO, Any]:
-    """Фикстура для получения/создания тестовой категории (по умолчанию 'TestCat').
-    После завершения теста удаляет созданную категорию из БД.
-
-    :param api_auth_token: Токен.
-    :param envs: Конфигурация окружения.
-    :param spend_db: Объект доступа к БД.
-    :yields: Экземпляр CategoryDTO.
-    """
-
-    token = api_auth_token
-    session = BaseSession(envs.api_url)
-    api = CategoriesApiClient(session, token)
-    category_name = "TestCat"
-    current_categories = api.get_all_categories()
-    category_obj = next(
-        (c for c in current_categories if c.name == category_name), None
-    )
-    if not category_obj:
-        category_obj = api.add_category(category_name)
-    yield category_obj
-    spend_db.delete_category_by_id(category_obj.id)
-
-
-@pytest.fixture
-def add_and_cleanup_category(spend_db) -> Generator[Any, Any]:
-    """Фикстура-менеджер для отслеживания и последующего удаления тестовых категорий из БД.
-
-    :param spend_db: Объект доступа к БД.
-    :return: Внутренняя функция для добавления категории в список на удаление.
-    После завершения теста удаляет все отмеченные категории.
-    """
-    created = []
-
-    def _add_category(name):
-        if isinstance(name, list):
-            created.extend(name)
-        else:
-            created.append(name)
-
-    yield _add_category
-    if created:
-        spend_db.delete_categories_by_names(created)
