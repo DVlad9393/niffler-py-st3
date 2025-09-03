@@ -24,6 +24,14 @@ class Envs(BaseModel):
     :type auth_secret: StrictStr
     :param frontend_url: Базовый URL интерфейса приложения.
     :type frontend_url: StrictStr
+    :param kafka_address_producer: Адрес Kafka-продьюсера.
+    :type kafka_address_producer: StrictStr
+    :param kafka_address_consumer: Адрес Kafka-консьюмера.
+    :type kafka_address_consumer: StrictStr
+    :param user_db_url: URL для подключения к базе данных пользователей.
+    :type user_db_url: StrictStr
+    :param userdata_group_id: group.id сервиса кафки.
+    :type userdata_group_id: StrictStr
     """
 
     api_url: StrictStr
@@ -36,3 +44,7 @@ class Envs(BaseModel):
     auth_url: StrictStr
     auth_secret: StrictStr
     frontend_url: StrictStr
+    kafka_address_producer: StrictStr
+    kafka_address_consumer: StrictStr
+    user_db_url: StrictStr
+    userdata_group_id: StrictStr
