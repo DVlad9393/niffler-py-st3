@@ -146,3 +146,64 @@ def allure_attach_request(function):
         return response
 
     return wrapper
+
+
+def _pretty_sql(statement: str) -> str:
+    """Форматирует SQL-запрос для большей читаемости: переносы строк после ключевых слов.
+
+    :param statement: Текст SQL-запроса.
+    :return: SQL-запрос с переносами строк.
+    """
+    for keyword in [
+        "SELECT",
+        "FROM",
+        "WHERE",
+        "ORDER BY",
+        "GROUP BY",
+        "AND",
+        "OR",
+        "LEFT JOIN",
+        "RIGHT JOIN",
+    ]:
+        statement = statement.replace(keyword, f"\n{keyword}")
+    return statement.strip()
+
+
+def _safe_format(statement: str, parameters) -> str:
+    """Подставляет параметры в SQL для Allure-вложений.
+    Не подходит для отправки в базу — только для логов и отчётов!
+
+    :param statement: SQL-запрос с плейсхолдерами.
+    :param parameters: Словарь или последовательность с параметрами для подстановки.
+    :return: SQL-запрос с подставленными параметрами или исходный запрос при ошибке.
+    """
+    try:
+        if isinstance(parameters, dict):
+            params = {
+                k: (f"'{v}'" if isinstance(v, str) else v)
+                for k, v in parameters.items()
+            }
+            return statement % params
+
+        if isinstance(parameters, tuple | list):
+            params = tuple(f"'{v}'" if isinstance(v, str) else v for v in parameters)
+            return statement % params
+    except Exception as e:
+        logging.warning(
+            f"SQL format error: {e!r}. Statement: {statement}, Params: {parameters}"
+        )
+    return statement
+
+
+def attach_sql(cursor, statement, parameters, context) -> None:
+    """Добавляет SQL-запрос с параметрами в отчет Allure в читабельном виде.
+
+    :param cursor: Курсор базы данных.
+    :param statement: Текст SQL-запроса.
+    :param parameters: Параметры для подстановки в SQL.
+    :param context: Контекст SQLAlchemy.
+    """
+    sql = _safe_format(statement, parameters)
+    pretty_sql = _pretty_sql(sql)
+    name = f'{statement.split(" ")[0]} {context.engine.url.database}'
+    allure.attach(pretty_sql, name=name, attachment_type=allure.attachment_type.TEXT)

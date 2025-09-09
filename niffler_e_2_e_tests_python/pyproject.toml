@@ -36,6 +36,8 @@ psycopg2-binary = "^2.9.10"
 ruff = "^0.12.2"
 pre-commit = "^4.2.0"
 pytest-xdist = "^3.8.0"
+grpcio-tools = "^1.74.0"
+confluent-kafka = "^2.11.1"
 
 [tool.poetry]
 package-mode = false

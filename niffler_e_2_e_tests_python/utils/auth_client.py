@@ -118,3 +118,46 @@ class AuthClient:
 
         self.token = token_response.json().get("access_token", None)
         return self.token
+
+    def registration(self, username, password, envs: Envs):
+        """Регистрирует пользователя через форму `/register` с использованием сессионных куки и CSRF.
+
+        Последовательность действий:
+          1) Выполняется GET-запрос к странице регистрации, чтобы инициализировать сессию
+             и получить CSRF-куки (`XSRF-TOKEN`). Разрешены переадресации.
+          2) Выполняется POST-запрос на тот же URL с формой регистрации:
+             передаются поля `username`, `password`, `passwordSubmit` (повтор пароля)
+             и `_csrf`, извлечённый из куки `XSRF-TOKEN`. Разрешены переадресации.
+
+        Примечания:
+          • Метод использует общий сессионный клиент (`self.session`), поэтому куки
+            и заголовки, установленные сервером, сохраняются между запросами.
+          • Значение `redirect_uri` фиксировано и передаётся как query-параметр первого запроса.
+          • Проверку успешности операции оставляет вызывающей стороне (например, по статус-коду
+            или содержимому ответа).
+
+        :param username: Имя пользователя, которое нужно зарегистрировать.
+        :param password: Пароль пользователя; также используется как повторное значение `passwordSubmit`.
+        :param envs: Объект окружения с базовым адресом сервиса авторизации (`auth_url`).
+        :return: HTTP-ответ клиента после POST-запроса регистрации (с учётом переадресаций).
+        :raises: Сетевые и клиентские исключения при недоступности сервиса или сбое запроса.
+        """
+        self.session.get(
+            url=f"{envs.auth_url}/register",
+            params={
+                "redirect_uri": "http://auth.niffler.dc:9000/register",
+            },
+            allow_redirects=True,
+        )
+
+        result = self.session.post(
+            url=f"{envs.auth_url}/register",
+            data={
+                "username": username,
+                "password": password,
+                "passwordSubmit": password,
+                "_csrf": self.session.cookies.get("XSRF-TOKEN"),
+            },
+            allow_redirects=True,
+        )
+        return result

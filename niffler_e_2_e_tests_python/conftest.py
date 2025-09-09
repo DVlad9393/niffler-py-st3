@@ -10,6 +10,7 @@ from allure_commons.types import AttachmentType
 from dotenv import load_dotenv
 from pytest import Item
 
+from niffler_e_2_e_tests_python.databases.used_db import UsersDb
 from niffler_e_2_e_tests_python.fixtures.auth_fixtures import (  # noqa: F401
     api_auth_token,
 )
@@ -35,12 +36,14 @@ from niffler_e_2_e_tests_python.fixtures.util_test_fixtures import (  # noqa: F4
 )
 from niffler_e_2_e_tests_python.models.config import Envs
 from niffler_e_2_e_tests_python.pages.login_page import LoginPage
+from niffler_e_2_e_tests_python.utils.auth_client import AuthClient
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from faker import Faker
 
 from niffler_e_2_e_tests_python.pages.main_page import MainPage
+from niffler_e_2_e_tests_python.utils.kafka_client import KafkaClient
 
 fake = Faker()
 
@@ -127,6 +130,10 @@ def envs() -> Envs:
         auth_url=os.getenv("AUTH_URL"),
         auth_secret=os.getenv("AUTH_SECRET"),
         frontend_url=os.getenv("FRONTEND_URL"),
+        kafka_address_producer=os.getenv("KAFKA_ADDRESS_PRODUCER"),
+        kafka_address_consumer=os.getenv("KAFKA_ADDRESS_CONSUMER"),
+        user_db_url=os.getenv("USER_DB_URL"),
+        userdata_group_id=os.getenv("USERDATA_GROUP_ID"),
     )
     allure.attach(
         env_instance.model_dump_json(indent=2),
@@ -186,3 +193,48 @@ def login(login_page: LoginPage, main_page: MainPage, envs) -> tuple[str, str, s
 
     allure.attach(token, name="token.txt", attachment_type=AttachmentType.TEXT)
     return envs.username, envs.password, token
+
+
+@pytest.fixture(scope="session")
+def auth_client(envs) -> AuthClient:
+    """Создаёт и возвращает клиент авторизации для e2e-тестов.
+
+    Фикстура имеет область видимости «session», поэтому один и тот же экземпляр
+    клиента используется всеми тестами в рамках одного запуска. Параметры окружения
+    (базовые URL, учётные данные и др.) берутся из фикстуры envs.
+
+    :param envs: Объект окружения с настройками для сервиса авторизации.
+    :return: Инициализированный клиент для выполнения запросов к auth-сервису.
+    """
+    return AuthClient(envs)
+
+
+@pytest.fixture(scope="session")
+def db_client(envs) -> UsersDb:
+    """Создаёт клиент доступа к базе данных пользовательских данных.
+
+    Под капотом инициализируется SQLAlchemy/SQLModel-движок и пул соединений.
+    Экземпляр переиспользуется всеми тестами в течение одной сессии. Если тестам
+    требуется изоляция данных, удаляйте/создавайте записи в самом тесте или
+    используйте фабрики.
+
+    :param envs: Объект окружения, содержащий строку подключения к БД.
+    :return: Клиент для выполнения запросов к таблицам пользовательских данных.
+    """
+    return UsersDb(envs.user_db_url)
+
+
+@pytest.fixture(scope="session")
+def kafka(envs):
+    """Предоставляет Kafka-клиент для публикации и чтения сообщений.
+
+    Открывает подключения продюсера/консьюмера один раз на всю сессию тестов и
+    автоматически закрывает их по завершении (контекстный менеджер гарантирует
+    закрытие консюмера и flush продюсера). Используйте этот клиент для отправки
+    тестовых сообщений и подписки на топики.
+
+    :param envs: Объект окружения с адресами брокеров и прочими настройками.
+    :yield: Экземпляр KafkaClient, готовый к взаимодействию с кластером.
+    """
+    with KafkaClient(envs) as k:
+        yield k
