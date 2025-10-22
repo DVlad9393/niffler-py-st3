@@ -32,6 +32,10 @@ class Envs(BaseModel):
     :type user_db_url: StrictStr
     :param userdata_group_id: group.id сервиса кафки.
     :type userdata_group_id: StrictStr
+    :param grpc_address: адрес grpc сервиса
+    :type grpc_address: StrictStr
+    :param grpc_mock_address: адрес grpc_mock сервиса
+    :type grpc_mock_address: StrictStr
     """
 
     api_url: StrictStr
@@ -48,3 +52,5 @@ class Envs(BaseModel):
     kafka_address_consumer: StrictStr
     user_db_url: StrictStr
     userdata_group_id: StrictStr
+    grpc_address: StrictStr
+    grpc_mock_address: StrictStr
