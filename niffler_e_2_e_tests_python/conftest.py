@@ -5,9 +5,11 @@ from collections.abc import Generator
 from typing import Any
 
 import allure
+import grpc
 import pytest
 from allure_commons.types import AttachmentType
 from dotenv import load_dotenv
+from grpc import insecure_channel
 from pytest import Item
 
 from niffler_e_2_e_tests_python.databases.used_db import UsersDb
@@ -33,6 +35,15 @@ from niffler_e_2_e_tests_python.fixtures.util_test_fixtures import (  # noqa: F4
     create_test_category_api,
     create_test_spend_api,
     spendings_manager,
+)
+from niffler_e_2_e_tests_python.grpc_tests.internal.grpc.interceptors.allure import (
+    AllureInterceptor,
+)
+from niffler_e_2_e_tests_python.grpc_tests.internal.grpc.interceptors.logging import (
+    LoggingInterceptor,
+)
+from niffler_e_2_e_tests_python.grpc_tests.internal.pb.niffler_currency_pb2_pbreflect import (
+    NifflerCurrencyServiceClient,
 )
 from niffler_e_2_e_tests_python.models.config import Envs
 from niffler_e_2_e_tests_python.pages.login_page import LoginPage
@@ -134,6 +145,8 @@ def envs() -> Envs:
         kafka_address_consumer=os.getenv("KAFKA_ADDRESS_CONSUMER"),
         user_db_url=os.getenv("USER_DB_URL"),
         userdata_group_id=os.getenv("USERDATA_GROUP_ID"),
+        grpc_address=os.getenv("GRPC_ADDRESS"),
+        grpc_mock_address=os.getenv("GRPC_MOCK_ADDRESS"),
     )
     allure.attach(
         env_instance.model_dump_json(indent=2),
@@ -238,3 +251,42 @@ def kafka(envs):
     """
     with KafkaClient(envs) as k:
         yield k
+
+
+INTERCEPTORS = [
+    LoggingInterceptor(),
+    AllureInterceptor(),
+]
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """Добавляет пользовательскую опцию командной строки ``--mock`` для pytest.
+
+    Позволяет переключать конфигурацию тестов между реальным окружением и мок-режимом.
+    При указании ``--mock`` фикстуры, зависящие от этой опции (например, ``grpc_client``),
+    будут использовать альтернативные адреса и ресурсы (например, тестовый gRPC-сервер).
+
+    :param parser: Объект парсера pytest, через который регистрируются пользовательские опции.
+    """
+    parser.addoption("--mock", action="store_true", default=False)
+
+
+@pytest.fixture(scope="session")
+def grpc_client(request: pytest.FixtureRequest, envs) -> NifflerCurrencyServiceClient:
+    """Создаёт gRPC-клиент для взаимодействия с сервисом ``NifflerCurrencyService``.
+
+    Фикстура инициализирует соединение с сервером gRPC один раз на всю сессию тестов.
+    Если тесты запущены с опцией ``--mock``, используется альтернативный адрес
+    (``envs.grpc_mock_address``) — например, для локального или тестового сервера.
+    Для всех вызовов подключаются перехватчики ``LoggingInterceptor`` и ``AllureInterceptor``,
+    обеспечивающие логирование и интеграцию с Allure-отчётами.
+
+    :param request: Объект запроса фикстуры pytest, используемый для проверки флага ``--mock``.
+    :param envs: Объект окружения с адресами gRPC-серверов и другими настройками.
+    :return: Экземпляр ``NifflerCurrencyServiceClient`` с готовым перехваченным каналом.
+    """
+    channel = insecure_channel(envs.grpc_address)
+    if request.config.getoption("--mock"):
+        channel = insecure_channel(envs.grpc_mock_address)
+    intercepted_channel = grpc.intercept_channel(channel, *INTERCEPTORS)
+    return NifflerCurrencyServiceClient(intercepted_channel)
