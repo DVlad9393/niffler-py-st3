@@ -1,3 +1,4 @@
+import os
 from collections.abc import Generator
 from typing import Any
 
@@ -14,15 +15,29 @@ from niffler_e_2_e_tests_python.pages.profile_page import ProfilePage
 @pytest.fixture(scope="function", params=["chromium"])
 def browser_page(request) -> Generator[Any, Any]:
     """Фикстура для создания страницы браузера Playwright.
+    Добавлена PW_HEADLESS переменная для headless режима в CI.
 
     :param request: Параметризировано браузером ('chromium', по умолчанию).
     :yields: Экземпляр страницы Playwright Page.
     Делает скриншот и прикладывает видео после завершения теста.
     """
+
     browser_name = request.param
+    is_ci = os.getenv("CI") == "true"
+    env_headless = os.getenv("PW_HEADLESS")  # "1" / "0" (приоритетнее CI)
+    headless = (env_headless != "0") if env_headless is not None else is_ci
+
+    common_args = [
+        "--disable-dev-shm-usage",
+        "--no-sandbox",
+        "--disable-gpu",
+        "--window-size=1920,1080",
+    ]
+    headed_args = ["--start-maximized", "--window-position=0,0"]
+
     with sync_playwright() as playwright:
         browser = getattr(playwright, browser_name).launch(
-            headless=False, args=["--start-maximized", "--window-position=0,0"]
+            headless=headless, args=common_args + ([] if headless else headed_args)
         )
         context = browser.new_context(
             viewport={"width": 1600, "height": 900}, record_video_dir="allure-results/"
