@@ -1,0 +1,7 @@
+/guru.qa.grpc.niffler.NifflerCurrencyService/CalculateRate
+spendCurrency: EUR
+desiredCurrency: RUB
+amount: 100
+
+calculatedAmount: 7200
+

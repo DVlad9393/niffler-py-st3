@@ -1,0 +1,1 @@
+{"total":2,"items":[{"uid":"e387fa4bb326b54ea8c19c2822aba374","name":"tests","statistic":{"failed":0,"broken":35,"skipped":0,"passed":3,"unknown":0,"total":38}},{"uid":"84bf6dcb68b37d340d4ac11f76399fea","name":"grpc_tests.tests","statistic":{"failed":0,"broken":0,"skipped":0,"passed":6,"unknown":0,"total":6}}]}

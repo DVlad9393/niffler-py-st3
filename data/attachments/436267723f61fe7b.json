@@ -1,0 +1,16 @@
+{
+  "api_url": "http://gateway.niffler.dc:8090",
+  "base_auth_url": "http://auth.niffler.dc:9000/login",
+  "base_url": "http://frontend.niffler.dc/main",
+  "base_error_url": "http://auth.niffler.dc:9000/login?error",
+  "spend_db_url": "postgresql+psycopg2://postgres:secret@localhost:5432/niffler-spend",
+  "auth_url": "http://auth.niffler.dc:9000",
+  "auth_secret": "secret",
+  "frontend_url": "http://frontend.niffler.dc",
+  "kafka_address_producer": "localhost:9093",
+  "kafka_address_consumer": "localhost:9093",
+  "user_db_url": "postgresql+psycopg2://postgres:secret@localhost:5432/niffler-userdata",
+  "userdata_group_id": "userdata",
+  "grpc_address": "localhost:8092",
+  "grpc_mock_address": "localhost:8094"
+}

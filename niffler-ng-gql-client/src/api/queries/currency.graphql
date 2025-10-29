@@ -1,5 +1,0 @@
-query Currencies {
-    currencies {
-        currency
-    }
-}

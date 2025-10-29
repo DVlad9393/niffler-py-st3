@@ -1,0 +1,7 @@
+/guru.qa.grpc.niffler.NifflerCurrencyService/CalculateRate
+spendCurrency: USD
+desiredCurrency: USD
+amount: 100
+
+calculatedAmount: 100
+

@@ -1,0 +1,3 @@
+DELETE 
+FROM "user" 
+WHERE "user".id = 47226165-3cd4-474c-9f48-90ba20afe03c
