@@ -33,6 +33,7 @@ chmod +x run_allure.sh # сделать скрипт исполняемым
  - Тесты по группе: ./run_allure.sh api
  - Запуск тестов с параллелизацией автоматическое определение воркеров: ./run_allure.sh api --workers auto
  - Запуск тестов с параллелизацией ручное определение воркеров и настройка loadfile: ./run_allure.sh --workers 4 --dist loadfile
+ - Запуск тестов с параллелизацией + headless режим в браузере PW_HEADLESS=1 ./run_allure.sh --workers 8 --dist loadfile
  Перед выполнением скрипта собрать докер контейнер с мок-объектом в пути (grpc niffler_e_2_e_tests_python/grpc_tests/docker-compose.mock.yml)
  - Тесты по группе c конфигом --mock (запуск для grpc тестов с данными мок объекта): ./run_allure.sh grpc --mock
 

@@ -102,7 +102,10 @@ class LoginPage(BasePage):
         )
         self.incorrect_login_or_password_text = Text(
             page,
-            locator='//p[contains(text(), "Неверные учетные данные пользователя")]',
+            locator=(
+                '//p[contains(text(), "Неверные учетные данные пользователя") or '
+                'contains(text(), "Bad credentials")]'
+            ),
             name="Incorrect login or password text",
         )
 
