@@ -56,10 +56,9 @@ jobs:
         working-directory: ./niffler_e_2_e_tests_python
         run: poetry install --no-root
 
-      - name: Setup Allure
-        uses: KengoTODA/actions-setup-allure@v1
-        with:
-          allure-version: 2.29.0
+      - name: Setup Allure CLI
+        run: |
+          npm install -g allure-commandline --save-dev
 
       - name: Build Docker containers
         working-directory: .
@@ -108,7 +107,7 @@ jobs:
           path: allure-report
 
       - name: Deploy Allure report to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v5
+        uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./allure-report
