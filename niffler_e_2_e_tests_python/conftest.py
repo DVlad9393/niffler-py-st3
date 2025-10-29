@@ -3,6 +3,7 @@ import sys
 import warnings
 from collections.abc import Generator
 from typing import Any
+from uuid import uuid4
 
 import allure
 import grpc
@@ -13,9 +14,8 @@ from grpc import insecure_channel
 from pytest import Item
 
 from niffler_e_2_e_tests_python.databases.used_db import UsersDb
-from niffler_e_2_e_tests_python.fixtures.auth_fixtures import (  # noqa: F401
-    api_auth_token,
-)
+
+# noqa: F401
 from niffler_e_2_e_tests_python.fixtures.client_fixtures import (  # noqa: F401
     category_api,
     spend_api,
@@ -132,8 +132,6 @@ def envs() -> Envs:
     load_dotenv()
     env_instance = Envs(
         api_url=os.getenv("API_URL"),
-        username=os.getenv("USERNAME"),
-        password=os.getenv("PASSWORD"),
         base_auth_url=os.getenv("BASE_AUTH_URL"),
         base_url=os.getenv("BASE_URL"),
         base_error_url=os.getenv("BASE_ERROR_URL"),
@@ -168,9 +166,12 @@ def create_test_data() -> tuple[str, str]:
 
 
 @pytest.fixture(scope="function")
-def create_user(login_page: LoginPage, create_test_data, envs) -> tuple[str, str]:
+def create_user(
+    login_page: LoginPage, create_test_data, envs, db_client
+) -> Generator[tuple[str, str], Any]:
     """Фикстура для регистрации нового пользователя через UI.
 
+    :param db_client: Клиент доступа к БД пользователей (`UsersDb`)
     :param login_page: Объект страницы логина.
     :param create_test_data: Кортеж (username, password).
     :param envs: Конфигурация окружения.
@@ -186,35 +187,38 @@ def create_user(login_page: LoginPage, create_test_data, envs) -> tuple[str, str
     login_page.congratulations_register_text.should_be_visible()
     login_page.sign_in_link.click()
     login_page.login_title.should_be_visible()
-    return username, password
+    yield username, password
+    db_client.delete_user_by_username(username)
 
 
 @pytest.fixture(scope="function")
-def login(login_page: LoginPage, main_page: MainPage, envs) -> tuple[str, str, str]:
+def login(
+    login_page: LoginPage, main_page: MainPage, envs, api_test_user
+) -> tuple[str, str, str]:
     """Фикстура для авторизации пользователя через UI.
 
     :param login_page: Объект страницы логина.
     :param main_page: Объект главной страницы.
     :param envs: Конфигурация окружения.
+    :param api_test_user: креды нового пользователя
     :return: Кортеж (username, password, token).
     """
     login_page.visit(envs.base_auth_url)
-    login_page.input_username.fill(envs.username)
-    login_page.input_password.fill(envs.password)
+    login_page.input_username.fill(api_test_user.username)
+    login_page.input_password.fill(api_test_user.password)
     token = login_page.login_button.click(intercept_header=True)
     main_page.history_of_spending_title.should_be_visible()
 
     allure.attach(token, name="token.txt", attachment_type=AttachmentType.TEXT)
-    return envs.username, envs.password, token
+    return api_test_user.username, api_test_user.password, token
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def auth_client(envs) -> AuthClient:
     """Создаёт и возвращает клиент авторизации для e2e-тестов.
 
-    Фикстура имеет область видимости «session», поэтому один и тот же экземпляр
-    клиента используется всеми тестами в рамках одного запуска. Параметры окружения
-    (базовые URL, учётные данные и др.) берутся из фикстуры envs.
+    Фикстура имеет область видимости «function», поэтому для каждого теста используется свой экземпляр клиента
+    клиента. Параметры окружения (базовые URL) берутся из фикстуры envs.
 
     :param envs: Объект окружения с настройками для сервиса авторизации.
     :return: Инициализированный клиент для выполнения запросов к auth-сервису.
@@ -237,19 +241,21 @@ def db_client(envs) -> UsersDb:
     return UsersDb(envs.user_db_url)
 
 
-@pytest.fixture(scope="session")
-def kafka(envs):
+@pytest.fixture(scope="function")
+def kafka(envs, request):
     """Предоставляет Kafka-клиент для публикации и чтения сообщений.
 
-    Открывает подключения продюсера/консьюмера один раз на всю сессию тестов и
+    Открывает подключения продюсера/консьюмера на каждый тест и
     автоматически закрывает их по завершении (контекстный менеджер гарантирует
     закрытие консюмера и flush продюсера). Используйте этот клиент для отправки
     тестовых сообщений и подписки на топики.
 
+    :param request:
     :param envs: Объект окружения с адресами брокеров и прочими настройками.
     :yield: Экземпляр KafkaClient, готовый к взаимодействию с кластером.
     """
-    with KafkaClient(envs) as k:
+    group_id = f"{envs.userdata_group_id}-{request.node.nodeid}-{uuid4().hex[:6]}"
+    with KafkaClient(envs, group_id=group_id) as k:
         yield k
 
 
@@ -271,7 +277,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption("--mock", action="store_true", default=False)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def grpc_client(request: pytest.FixtureRequest, envs) -> NifflerCurrencyServiceClient:
     """Создаёт gRPC-клиент для взаимодействия с сервисом ``NifflerCurrencyService``.
 

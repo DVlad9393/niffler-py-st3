@@ -1,6 +1,8 @@
 import json
 import logging
+import time
 from typing import Any
+from uuid import uuid4
 
 from confluent_kafka import TopicPartition
 from confluent_kafka.admin import AdminClient
@@ -27,9 +29,11 @@ class KafkaClient:
         self,
         envs,
         client_id: str = "tester",
-        group_id: str = "tester",
+        group_id: str | None = None,
     ):
         """Инициализирует Kafka-клиенты (AdminClient, Producer, Consumer) на основании окружения.
+        Если group_id не передан — генерируется уникальный для каждого клиента.
+        Это нужно для изоляции параллельных тестов (xdist).
 
         :param envs: Объект с настройками окружения (содержит адреса для продюсера и консюмера).
         :param client_id: Идентификатор клиента для метрик и отладки.
@@ -38,13 +42,14 @@ class KafkaClient:
         """
         self.server_producer = envs.kafka_address_producer
         self.server_consumer = envs.kafka_address_consumer
+        self.group_id = group_id or f"tester-{uuid4().hex[:8]}"
 
         self.admin = AdminClient({"bootstrap.servers": self.server_producer})
         self.producer = Producer({"bootstrap.servers": self.server_producer})
         self.consumer = Consumer(
             {
                 "bootstrap.servers": self.server_consumer,
-                "group.id": group_id,
+                "group.id": self.group_id,
                 "client.id": client_id,
                 "auto.offset.reset": "latest",
                 "enable.auto.commit": False,
@@ -54,10 +59,11 @@ class KafkaClient:
         md = self.admin.list_topics(timeout=5)
         advertised = {b.id: f"{b.host}:{b.port}" for b in md.brokers.values()}
         logging.info(
-            "Bootstrap(producer)=%s, Bootstrap(consumer)=%s, Advertised brokers=%s",
+            "Bootstrap(producer)=%s, Bootstrap(consumer)=%s, Advertised brokers=%s, group_id=%s",
             self.server_producer,
             self.server_consumer,
             advertised,
+            self.group_id,
         )
 
     def __enter__(self):
@@ -165,7 +171,6 @@ class KafkaClient:
         :param kwargs: Параметры ожидания, прокидываемые в декоратор (`timeout`, `polling_interval`, `err`).
         :return: Сырые байты значения сообщения или `None`, если оно не было получено в пределах таймаута.
         """
-        self.consumer.assign(partitions)
         try:
             message = self.consumer.poll(1.0)
             logging.debug("%s", message.value())
@@ -189,38 +194,95 @@ class KafkaClient:
         except Exception as err:
             logging.error("probably no such topic: %s: %s", topic, err)
 
-    def log_msg_and_json(self, topic_partitions):
-        """Ожидает сообщение с указанных оффсетов, логирует его и возвращает полезную нагрузку.
+    def log_msg_and_json(
+        self,
+        topic_partitions,
+        *,
+        match_username: str | None = None,
+        timeout: float = 25.0,
+    ):
+        """Блокирующе ожидает публикации нового JSON-сообщения в Kafka,
+        начиная с заданных оффсетов, и возвращает «сырое» содержимое первого
+        подходящего сообщения (в виде bytes).
 
-        Внутри использует `consume_message(..., timeout=25)`.
+        Метод используется для end-to-end тестов, где необходимо убедиться,
+        что после некоторого действия в системе (например, регистрации пользователя)
+        соответствующее событие действительно попало в Kafka-топик.
 
-        :param topic_partitions: Список объектов `TopicPartition` с актуальными оффсетами чтения.
-        :return: Сырые байты сообщения или `None`, если за отведённое время ничего не пришло.
+
+        Поведение предназначено для изоляции при параллельных запусках тестов (pytest-xdist):
+        фильтрация по `match_username` гарантирует, что каждый тест дождётся именно своего
+        пользовательского события, даже если Kafka-топик общий для всех воркеров.
+
+        :param topic_partitions: Список объектов `confluent_kafka.TopicPartition`,
+                                 задающих топик, партицию и оффсет начала чтения.
+                                 Обычно возвращается методом `subscribe_listen_new_offsets()`.
+        :param match_username: (опционально) строка с ожидаемым username;
+                               если указана, метод возвращает только сообщение,
+                               где `payload["username"] == match_username`.
+        :param timeout: Общее время ожидания (в секундах). По умолчанию 25.0.
+                        После его истечения будет выброшено исключение AssertionError.
+        :return: Сырые байты (`bytes`) полезной нагрузки Kafka-сообщения (value).
+        :raises AssertionError: если в течение `timeout` не найдено ни одного
+                                подходящего JSON-сообщения (или подходящего по username).
+        :raises ValueError: если формат сообщения невалиден (например, не JSON),
+                            но эти ошибки обычно перехватываются и просто логируются.
         """
-        msg = self.consume_message(topic_partitions, timeout=25)
-        logging.info(msg)
-        return msg
+        self.consumer.assign(topic_partitions)
+
+        deadline = time.time() + timeout
+        while True:
+            remaining = deadline - time.time()
+            if remaining <= 0:
+                break
+
+            raw = self.consume_message(
+                topic_partitions,
+                timeout=max(0.2, remaining),
+                polling_interval=0.5,
+                err=False,
+            )
+
+            if not raw:
+                continue
+
+            try:
+                payload = json.loads(
+                    raw.decode("utf-8") if isinstance(raw, bytes | bytearray) else raw
+                )
+            except Exception as e:
+                logging.debug("Skip non-JSON message: %s", e)
+                continue
+
+            logging.info("Kafka payload: %s", payload)
+            if match_username is None or payload.get("username") == match_username:
+                return raw
+
+        raise AssertionError(
+            "Timed out waiting Kafka event"
+            + (f" for {match_username}" if match_username else "")
+        )
 
     def subscribe_listen_new_offsets(self, topic):
         """Подписывается на топик и возвращает список партиций со следующими оффсетами чтения.
 
         Логика:
-          1) подписаться на топик;
-          2) получить перечень партиций топика;
-          3) определить high watermark (текущий «конец» партиции) для каждой;
-          4) вернуть `TopicPartition(topic, partition_id, next_offset)` — чтобы читать только новые сообщения.
+          1) получить перечень партиций топика;
+          2) определить high watermark (текущий «конец» партиции) для каждой;
+          3) вернуть `TopicPartition(topic, partition_id, next_offset)` — чтобы читать только новые сообщения.
 
         :param topic: Имя топика.
         :return: Список `TopicPartition` с оффсетами для чтения «с конца».
         """
-        self.consumer.subscribe([topic])
-        p_ids = self.consumer.list_topics(topic).topics[topic].partitions.keys()
-        partitions_offsets_event = {k: self.get_last_offset(topic, k) for k in p_ids}
+        md = self.admin.list_topics(topic, timeout=5)
+        p_ids = md.topics[topic].partitions.keys()
+
+        partitions_offsets_event = {p: self.get_last_offset(topic, p) for p in p_ids}
         logging.info("%s offsets: %s", topic, partitions_offsets_event)
-        topic_partitions = [
-            TopicPartition(topic, k, v) for k, v in partitions_offsets_event.items()
+
+        return [
+            TopicPartition(topic, p, off) for p, off in partitions_offsets_event.items()
         ]
-        return topic_partitions
 
     def sending_message(self, topic: str, username: str):
         """Формирует и публикует доменное сообщение о пользователе в указанный топик.
@@ -241,59 +303,3 @@ class KafkaClient:
             headers={"__TypeId__": "guru.qa.niffler.model.UserJson"},
         )
         self.producer.flush(5)
-
-    ##TODO к тесту @id("600004")
-    # def advance_group_to_end_admin(self, topic: str, group_id: str, timeout: float = 10.0) -> Dict[int, int]:
-    #     """
-    #     Сдвигает оффсеты consumer-группы на конец топика (high watermark) через Admin API,
-    #     не вступая в группу (без ребалансов).
-    #     """
-    #     # 1) Партиции топика
-    #     md = self.admin.list_topics(topic, timeout=timeout)
-    #     partitions: List[int] = list(md.topics[topic].partitions.keys())
-    #
-    #     # 2) Снять high watermark по всем партициям на «зондирующем» консюмере
-    #     probe = Consumer({
-    #         "bootstrap.servers": self.server_consumer,
-    #         "group.id": f"offset-probe-{uuid4().hex}",
-    #         "enable.auto.commit": False,
-    #         "auto.offset.reset": "latest",
-    #     })
-    #     try:
-    #         desired_tps: List[TopicPartition] = []
-    #         result_map: Dict[int, int] = {}
-    #         for p in partitions:
-    #             _, high = probe.get_watermark_offsets(TopicPartition(topic, p), timeout=timeout)
-    #             desired_tps.append(TopicPartition(topic, p, high))  # хотим зафиксировать offset=high
-    #             result_map[p] = high
-    #     finally:
-    #         probe.close()
-    #
-    #     # 3) Сформировать запрос и применить
-    #     req = [ConsumerGroupTopicPartitions(group_id=group_id, topic_partitions=desired_tps)]
-    #     futures = self.admin.alter_consumer_group_offsets(req, request_timeout=timeout)
-    #
-    #     # 4) Дождаться завершения операции (если были ошибки — здесь выпадет исключение)
-    #     for _grp, fut in futures.items():
-    #         fut.result(timeout=timeout)
-    #
-    #     return result_map
-    #
-    # def list_group_offsets(self, group_id: str, topic: str, timeout: float = 10.0) -> Dict[int, int]:
-    #     """
-    #     ВернутьCommitted offsets группы group_id по указанному topic.
-    #     Работает на confluent-kafka>=2.11: result() -> ConsumerGroupTopicPartitions.
-    #     """
-    #     # Запрашиваем offsets по всем партициям группы:
-    #     req = [ConsumerGroupTopicPartitions(group_id=group_id)]
-    #     futures = self.admin.list_consumer_group_offsets(req, request_timeout=timeout)
-    #     out: Dict[int, int] = {}
-    #
-    #     # У нас один запрос -> один future
-    #     for _req, fut in futures.items():
-    #         cgtp = fut.result(timeout=timeout)  # <-- это ConsumerGroupTopicPartitions
-    #         # Берем только нужный топик, извлекаем оффсеты из TopicPartition.offset
-    #         for tp in cgtp.topic_partitions:
-    #             if tp.topic == topic:
-    #                 out[tp.partition] = tp.offset
-    #     return out

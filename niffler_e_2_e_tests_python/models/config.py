@@ -6,10 +6,6 @@ class Envs(BaseModel):
 
     :param api_url: Базовый URL для обращения к API.
     :type api_url: StrictStr
-    :param username: Имя пользователя для аутентификации.
-    :type username: StrictStr
-    :param password: Пароль пользователя.
-    :type password: StrictStr
     :param base_auth_url: URL для авторизации.
     :type base_auth_url: StrictStr
     :param base_url: URL главной страницы интерфейса приложения.
@@ -39,8 +35,6 @@ class Envs(BaseModel):
     """
 
     api_url: StrictStr
-    username: StrictStr
-    password: StrictStr
     base_auth_url: StrictStr
     base_url: StrictStr
     base_error_url: StrictStr
