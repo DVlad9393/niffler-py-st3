@@ -14,28 +14,6 @@ from grpc import insecure_channel
 from pytest import Item
 
 from niffler_e_2_e_tests_python.databases.used_db import UsersDb
-
-# noqa: F401
-from niffler_e_2_e_tests_python.fixtures.client_fixtures import (  # noqa: F401
-    category_api,
-    spend_api,
-    spend_db,
-)
-from niffler_e_2_e_tests_python.fixtures.pages_fixtures import (  # noqa: F401
-    browser_page,
-    login_page,
-    main_page,
-    new_spending_page,
-    profile_page,
-)
-from niffler_e_2_e_tests_python.fixtures.util_test_fixtures import (  # noqa: F401
-    add_and_cleanup_category,
-    add_spending,
-    category,
-    create_test_category_api,
-    create_test_spend_api,
-    spendings_manager,
-)
 from niffler_e_2_e_tests_python.grpc_tests.internal.grpc.interceptors.allure import (
     AllureInterceptor,
 )
@@ -55,6 +33,13 @@ from faker import Faker
 
 from niffler_e_2_e_tests_python.pages.main_page import MainPage
 from niffler_e_2_e_tests_python.utils.kafka_client import KafkaClient
+
+pytest_plugins = [
+    "fixtures.auth_fixtures",
+    "fixtures.client_fixtures",
+    "fixtures.pages_fixtures",
+    "fixtures.util_test_fixtures",
+]
 
 fake = Faker()
 

@@ -49,6 +49,11 @@ jobs:
         working-directory: ./niffler_e_2_e_tests_python
         run: poetry install --no-root
 
+      - name: Setup Allure
+        uses: KengoTODA/actions-setup-allure@v1
+        with:
+          allure-version: 2.29.0
+
       - name: Build Docker containers
         working-directory: .
         run: |
