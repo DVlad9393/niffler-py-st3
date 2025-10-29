@@ -67,12 +67,16 @@ jobs:
           chmod +x ./docker-compose-dev.sh
           ./docker-compose-dev.sh
 
+      - name: Install Allure CLI
+        run: |
+          npm install -g allure-commandline --save-dev
+          allure --version
+
       - name: Run tests (Allure results)
         working-directory: ./niffler_e_2_e_tests_python
         run: |
           chmod +x ./run_allure.sh
-          # Прогон по твоему скрипту (без mock-параметра и без отдельного 3.12)
-          ./run_allure.sh api --workers auto
+          ./run_allure.sh --workers auto --dist loadfile
         continue-on-error: true
 
       - name: Upload Allure results artifact
