@@ -28,7 +28,7 @@ class TestAuthRegistrationKafkaTest:
         result = auth_client.registration(username, password, envs=envs)
         assert result.status_code == 201
 
-        event = kafka.log_msg_and_json(topic_partitions)
+        event = kafka.log_msg_and_json(topic_partitions, match_username=username)
 
         with step("Check that message from kafka exist"):
             assert event != "" and event != b""
@@ -86,47 +86,6 @@ class TestAuthRegistrationKafkaTest:
 
         finally:
             db_client.delete_user_by_username(username)
-
-    ##TODO Тест проходит успешно но из-за него докер контейнер начинает заполняться логами, поэтому тест либо надо убирать
-    ##либо править нифлер чтобы не сыпал логами при отправке невалидного сообщения
-    # @id("600004")
-    # @title("KAFKA/USERDATA: невалидные сообщения игнорируются и не приводят к записи в БД")
-    # @tag("KAFKA")
-    # def test_userdata_ignores_invalid_messages(self, kafka, db_client,envs):
-    #         bogus_username = Faker().user_name()
-    #
-    #         try:
-    #                 with step("Шлём невалидный JSON (сырой текст) в users"):
-    #                         kafka.producer.produce(
-    #                                 "users",
-    #                                 value=b"not a json",
-    #                                 on_delivery=kafka.delivery_report,
-    #                                 headers={"__TypeId__": "guru.qa.niffler.model.UserJson"},
-    #                         )
-    #                         kafka.producer.flush(5)
-    #
-    #                 with step("Убеждаемся, что запись НЕ появилась"):
-    #                         time.sleep(2.0)
-    #                         assert db_client.get_user_by_username(bogus_username) is None
-    #                         assert db_client.count_users_by_username(bogus_username) == 0
-    #
-    #                 with step("Шлём валидный JSON, но без поля username"):
-    #                         kafka.producer.produce(
-    #                                 "users",
-    #                                 value=json.dumps({"foo": "bar"}).encode("utf-8"),
-    #                                 on_delivery=kafka.delivery_report,
-    #                                 headers={"__TypeId__": "guru.qa.niffler.model.UserJson"},
-    #                         )
-    #                         kafka.producer.flush(5)
-    #
-    #                 with step("Снова убеждаемся, что записи нет"):
-    #                         time.sleep(2.0)
-    #                         assert db_client.get_user_by_username(bogus_username) is None
-    #
-    #         finally:
-    #                 kafka.advance_group_to_end_admin(topic="users", group_id=envs.userdata_group_id)
-    #                 kafka.list_group_offsets(envs.userdata_group_id, "users")
-    #                 db_client.delete_user_by_username(bogus_username)
 
     @id("600005")
     @title(

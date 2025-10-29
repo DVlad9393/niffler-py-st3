@@ -21,7 +21,9 @@ CATEGORY_NAME = DataTest.CATEGORY_NAME.value
 
 
 @pytest.fixture
-def add_spending(spend_api, category, envs) -> Callable[[Any, int, Any, str], SpendDTO]:
+def add_spending(
+    spend_api, category, envs, api_test_user
+) -> Callable[[Any, int, Any, str], SpendDTO]:
     """Фикстура-обёртка для добавления новой траты.
 
     :param spend_api: API клиент SpendApiClient.
@@ -31,7 +33,7 @@ def add_spending(spend_api, category, envs) -> Callable[[Any, int, Any, str], Sp
     """
 
     def _add_spending(description, amount=100, category_name=None, currency="RUB"):
-        username = envs.username
+        username = api_test_user.username
 
         category_obj = category
         if category_name:
@@ -152,7 +154,10 @@ def create_test_category_api(
 
 @pytest.fixture
 def create_test_spend_api(
-    spend_api: SpendApiClient, create_test_category_api: CategoryDTO, envs
+    spend_api: SpendApiClient,
+    create_test_category_api: CategoryDTO,
+    envs,
+    api_test_user,
 ) -> Generator[Any, Any]:
     """Создаёт тестовую трату и удаляет после теста."""
     spend = SpendAdd(
@@ -163,6 +168,8 @@ def create_test_spend_api(
         amount=150,
         description="Тестовая трата",
     )
-    spend_dto = spend_api.add_spending(spend, create_test_category_api, envs.username)
+    spend_dto = spend_api.add_spending(
+        spend, create_test_category_api, api_test_user.username
+    )
     yield spend_dto.id
     spend_api.delete_spending([spend_dto.id])

@@ -66,7 +66,7 @@ def test_update_category_api(
 @allure.story("Spending CRUD")
 @pytest.mark.api
 def test_add_spending_api(
-    spend_api: SpendApiClient, create_test_category_api: CategoryDTO, envs
+    spend_api: SpendApiClient, create_test_category_api: CategoryDTO, api_test_user
 ):
     """Проверка добавления траты."""
     spend = SpendAdd(
@@ -77,7 +77,9 @@ def test_add_spending_api(
         amount=123,
         description="API-тест",
     )
-    spend_dto = spend_api.add_spending(spend, create_test_category_api, envs.username)
+    spend_dto = spend_api.add_spending(
+        spend, create_test_category_api, api_test_user.username
+    )
     result = spend_api.get_spending_by_id(spend_dto.id)
     assert spend_dto.description == "API-тест"
     assert result.id == spend_dto.id
@@ -97,7 +99,7 @@ def test_get_all_spends_api(spend_api: SpendApiClient, create_test_spend_api: st
 @allure.story("Spending CRUD")
 @pytest.mark.api
 def test_delete_spending_api(
-    spend_api: SpendApiClient, create_test_category_api: CategoryDTO, envs
+    spend_api: SpendApiClient, create_test_category_api: CategoryDTO, api_test_user
 ):
     """Проверка удаления траты."""
     spend = SpendAdd(
@@ -108,7 +110,9 @@ def test_delete_spending_api(
         amount=150,
         description="Тестовая трата",
     )
-    spend_dto = spend_api.add_spending(spend, create_test_category_api, envs.username)
+    spend_dto = spend_api.add_spending(
+        spend, create_test_category_api, api_test_user.username
+    )
     resp = spend_api.delete_spending([spend_dto.id])
     db_spends = spend_api.get_all_spends()
     assert resp.status_code == 200
@@ -130,7 +134,7 @@ def test_filter_spending_by_currency_api(
 @allure.story("Spending negative")
 @pytest.mark.api
 def test_add_spending_invalid_currency_api(
-    spend_api: SpendApiClient, create_test_category_api: CategoryDTO, envs
+    spend_api: SpendApiClient, create_test_category_api: CategoryDTO, api_test_user
 ):
     """Проверка ошибки при добавлении траты с невалидной валютой."""
     spend = SpendAdd(
@@ -142,7 +146,7 @@ def test_add_spending_invalid_currency_api(
         description="Bad currency",
     )
     resp = spend_api.add_invalid_spending(
-        spend, create_test_category_api, envs.username
+        spend, create_test_category_api, api_test_user.username
     )
     result = spend_api.get_not_exists_spending_by_id(spend.id)
     assert resp.status_code == 400
