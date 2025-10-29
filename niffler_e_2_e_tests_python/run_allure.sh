@@ -47,5 +47,7 @@ allure generate allure-results --clean -o allure-report
 mkdir -p allure-report/data/attachments/static/libs
 cp -a schemas/templates/static/libs/. allure-report/data/attachments/static/libs || true
 
-allure open allure-report || true
+if [[ -z "${CI:-}" ]]; then
+  allure open allure-report || true
+fi
 exit $status
