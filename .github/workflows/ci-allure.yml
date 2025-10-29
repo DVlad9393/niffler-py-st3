@@ -118,22 +118,39 @@ jobs:
           name: allure-html-report
           path: allure-report
 
+  generate-report:
+    name: Generate & Publish Allure Report
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    environment:
+      name: github-pages
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Allure results
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-results
+          path: ./allure-results
+
+      - name: Install Allure CLI
+        run: |
+          npm install -g allure-commandline --save-dev
+          allure --version
+
+      - name: Generate Allure report
+        run: |
+          allure generate allure-results --clean -o allure-report
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./allure-report
 
-  deploy:
-    name: Deploy to GitHub Pages
-    needs: build-report
-    runs-on: ubuntu-latest
-    if: always()
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
