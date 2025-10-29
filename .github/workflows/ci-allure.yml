@@ -70,7 +70,7 @@ jobs:
         working-directory: ./niffler_e_2_e_tests_python
         run: |
           chmod +x ./run_allure.sh
-          ./run_allure.sh api --workers auto
+          ./run_allure.sh --workers auto --dist loadfile
 
       - name: Upload Allure results
         if: always()
