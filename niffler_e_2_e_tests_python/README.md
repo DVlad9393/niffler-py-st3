@@ -228,15 +228,15 @@ allure serve
 <details>
 <summary>Пример отчёта</summary>
 <br>
-<img src="assets/allure_report_1.PNG">
-<img src="assets/allure_report_2.PNG">
-<img src="assets/allure_report_3.PNG">
+<code><img src="assets/allure_report_1.PNG"></code>
+<code><img src="assets/allure_report_2.PNG"></code>
+<code><img src="assets/allure_report_3.PNG"></code>
 </details>
 
 <details>
 <summary>Пример прогона UI теста</summary>
 <br>
-<img src="assets/videoframe_3840.PNG">
+<code><img src="assets/videoframe_3840.PNG"></code>
 </details>
 
 ---
