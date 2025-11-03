@@ -4,7 +4,7 @@
 <details>
 <summary>Схема проекта Niffler 2.0</summary>
 <br>
-<img src="niffler-diagram.png" width="600">
+<img src="assets/niffler-diagram.png" width="600">
 </details>
 
 <details>
@@ -83,6 +83,12 @@ bash docker-compose-dev.sh
   <code><img width="5%" title="poetry" src="https://python-poetry.org/images/logo-origami.svg"></code>
   <code><img width="5%" title="github" src="https://github.com/MDN78/MDN78/blob/main/assets/github.png"></code>
   <code><img width="5%" title="pycharm" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/pycharm/pycharm-original.svg"></code>
+  <code><img width="5%" title="Requests" src="assets/Requests_Python_Logo.png"></code>
+  <code><img width="5%" title="SQLAlchemy" src="assets/SQLAlchemy.svg"></code>
+  <code><img width="5%" title="Pydantic" src="assets/Pydantic--Streamline-Simple-Icons.svg"></code>
+  <code><img width="5%" title="Jinja2" src="assets/jinja-svgrepo-com.svg"></code>
+  <code><img width="5%" title="Git" src="assets/Git.svg"></code>
+  <code><img width="5%" title="Pre-commit" src="assets/pre-commit-svgrepo-com.svg"></code>
 </p>
 
 ---
