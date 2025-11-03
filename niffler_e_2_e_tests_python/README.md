@@ -236,7 +236,7 @@ allure serve
 <details>
 <summary>Пример прогона UI теста</summary>
 <br>
-<video src="assets/data_attachments_809db929d1b2f0cb.webm" width="800" controls autoplay loop muted></video>
+<code><img src="assets/data_attachments_809db929d1b2f0cb.gif"></code>
 </details>
 
 ---
