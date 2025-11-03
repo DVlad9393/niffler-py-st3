@@ -1,5 +1,5 @@
 # 🧩 Проект автоматизированного тестирования приложения **Niffler**
-<img src="assets/niffler-with-a-coin.png" width="200">
+<img src="assets/niffler-with-a-coin.png" width="400">
 
 <details>
 <summary>Схема проекта Niffler 2.0</summary>
