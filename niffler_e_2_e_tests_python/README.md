@@ -236,7 +236,7 @@ allure serve
 <details>
 <summary>Пример прогона UI теста</summary>
 <br>
-<code><img src="assets/videoframe_3840.png"></code>
+<code><img src="assets/data_attachments_809db929d1b2f0cb.webm"></code>
 </details>
 
 ---
