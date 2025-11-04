@@ -1,10 +1,10 @@
 import time
 from collections.abc import Sequence
 
-from sqlalchemy import Engine, create_engine, event, func
+from sqlalchemy import Engine, create_engine, delete, event, func
 from sqlmodel import Session, select
 
-from niffler_e_2_e_tests_python.models.user import User
+from niffler_e_2_e_tests_python.models.user import Friendship, User
 from niffler_e_2_e_tests_python.utils.allure_helpers import attach_sql
 
 
@@ -138,4 +138,33 @@ class UsersDb:
             users = session.exec(statement).all()
             for user in users:
                 session.delete(user)
+            session.commit()
+
+    def delete_user_by_username_from_users_and_friendship(self, username: str) -> None:
+        """Удаляет все записи пользователей с указанным `username из таблиц User и Friendship`.
+
+        Выполняет выборку всех подходящих записей и удаляет их по одной,
+        затем фикcирует транзакцию. Полезно для «гигиены» тестовых данных.
+
+        :param username: Имя пользователя, чьи записи нужно удалить.
+        :return: Ничего не возвращает.
+        """
+        with Session(self.engine) as session:
+            users = session.exec(select(User).where(User.username == username)).all()
+            if not users:
+                return
+
+            user_ids = [u.id for u in users if u.id]
+
+            if user_ids:
+                session.exec(
+                    delete(Friendship).where(Friendship.requester_id.in_(user_ids))
+                )
+                session.exec(
+                    delete(Friendship).where(Friendship.addressee_id.in_(user_ids))
+                )
+
+            for u in users:
+                session.delete(u)
+
             session.commit()

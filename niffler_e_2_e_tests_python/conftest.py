@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from grpc import insecure_channel
 from pytest import Item
 
+from niffler_e_2_e_tests_python.databases.friendship_db import FriendshipDb
 from niffler_e_2_e_tests_python.databases.used_db import UsersDb
 from niffler_e_2_e_tests_python.grpc_tests.internal.grpc.interceptors.allure import (
     AllureInterceptor,
@@ -39,6 +40,7 @@ pytest_plugins = [
     "fixtures.client_fixtures",
     "fixtures.pages_fixtures",
     "fixtures.util_test_fixtures",
+    "fixtures.soap_fixtures",
 ]
 
 fake = Faker()
@@ -130,6 +132,8 @@ def envs() -> Envs:
         userdata_group_id=os.getenv("USERDATA_GROUP_ID"),
         grpc_address=os.getenv("GRPC_ADDRESS"),
         grpc_mock_address=os.getenv("GRPC_MOCK_ADDRESS"),
+        userdata_soap_url=os.getenv("USERDATA_SOAP_URL"),
+        userdata_soap_ns=os.getenv("USERDATA_SOAP_NS"),
     )
     allure.attach(
         env_instance.model_dump_json(indent=2),
@@ -173,7 +177,7 @@ def create_user(
     login_page.sign_in_link.click()
     login_page.login_title.should_be_visible()
     yield username, password
-    db_client.delete_user_by_username(username)
+    db_client.delete_user_by_username_from_users_and_friendship(username)
 
 
 @pytest.fixture(scope="function")
@@ -224,6 +228,24 @@ def db_client(envs) -> UsersDb:
     :return: Клиент для выполнения запросов к таблицам пользовательских данных.
     """
     return UsersDb(envs.user_db_url)
+
+
+@pytest.fixture(scope="session")
+def friendship_db(envs) -> FriendshipDb:
+    """Фикстура уровня сессии для доступа к таблице `friendship` в пользовательской БД.
+
+    Создаёт экземпляр клиента `FriendshipDb`, который обеспечивает методы
+    для выборки, добавления, обновления и удаления связей дружбы между пользователями.
+
+    Используется во всех тестах SOAP / Userdata, где требуется верификация
+    состояния дружбы в базе данных после вызовов SOAP-методов
+    (`sendInvitation`, `acceptInvitation`, `declineInvitation`, `removeFriend`).
+
+    :param envs: Фикстура с объектом `Envs`, содержащим параметры окружения
+                 и строку подключения `user_db_url`.
+    :return: Экземпляр `FriendshipDb`, готовый к работе с таблицей `friendship`.
+    """
+    return FriendshipDb(envs.user_db_url)
 
 
 @pytest.fixture(scope="function")

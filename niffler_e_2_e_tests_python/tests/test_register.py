@@ -12,4 +12,4 @@ def test_registration_flow(login_page: LoginPage, create_test_data, envs, db_cli
     login_page.create_new_account(username, password)
     current_url = login_page.get_current_url()
     assert current_url == envs.base_auth_url
-    db_client.delete_user_by_username(username)
+    db_client.delete_user_by_username_from_users_and_friendship(username)

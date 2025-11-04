@@ -32,6 +32,10 @@ class Envs(BaseModel):
     :type grpc_address: StrictStr
     :param grpc_mock_address: адрес grpc_mock сервиса
     :type grpc_mock_address: StrictStr
+    :param userdata_soap_url: адрес userdata_soap
+    :type userdata_soap_url: str | None = None
+    :param userdata_soap_ns: адрес userdata_soap
+    :type userdata_soap_ns: str | None = None
     """
 
     api_url: StrictStr
@@ -48,3 +52,5 @@ class Envs(BaseModel):
     userdata_group_id: StrictStr
     grpc_address: StrictStr
     grpc_mock_address: StrictStr
+    userdata_soap_url: str | None = None
+    userdata_soap_ns: str | None = None
