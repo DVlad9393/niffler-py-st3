@@ -281,6 +281,6 @@ poetry run pytest -k "test_archive_category_db" --alluredir allure-results --cle
 🧠 QA Automation Engineer  
 🗓️ 2025  
 🔗 Проект: *Учебно-практическая стендовая система автотестов Niffler (UI + API + Kafka + DB + gRPC + Allure)*  
-📧 Email: vladdd9312@gmail.com
+📧 Email: vladdd9312@gmail.com   
 💼 [LinkedIn](https://www.linkedin.com/in/vladislav-duritski-053827376/)  
 💻 [HeadHunter (HH.ru)](https://hh.ru/resume/bead2577ff0d39e32f0039ed1f744f7568616b)
