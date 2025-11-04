@@ -41,3 +41,8 @@ out/
 ### gRPC generated files ###
 /niffler-grpc-common/src/generated/**
 /allure-results/
+
+# Кэш Python
+__pycache__/
+*.pyc
+.DS_Store
