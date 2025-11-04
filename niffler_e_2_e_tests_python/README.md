@@ -271,7 +271,7 @@ poetry run pytest -k "test_archive_category_db" --alluredir allure-results --cle
 - Запускается при Pull Request и коммитах в `main`/`master`
 - Автоматически поднимает Docker, Playwright и Allure
 - После прогона формирует Allure Report
-- **Публикует отчёт на GitHub Pages**
+- **Публикует отчёт на [GitHub Pages](https://dvlad9393.github.io/niffler-py-st3/)**
 
 ---
 
