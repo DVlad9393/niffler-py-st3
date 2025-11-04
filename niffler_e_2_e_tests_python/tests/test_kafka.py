@@ -55,7 +55,7 @@ class TestAuthRegistrationKafkaTest:
             with step("Проверяем, что запись единственная"):
                 assert db_client.count_users_by_username(username) == 1
         finally:
-            db_client.delete_user_by_username(username)
+            db_client.delete_user_by_username_from_users_and_friendship(username)
 
     @id("600003")
     @title(
@@ -85,7 +85,7 @@ class TestAuthRegistrationKafkaTest:
                 assert user2.id == user1.id
 
         finally:
-            db_client.delete_user_by_username(username)
+            db_client.delete_user_by_username_from_users_and_friendship(username)
 
     @id("600005")
     @title(
@@ -97,7 +97,7 @@ class TestAuthRegistrationKafkaTest:
         try:
             with step("Чистим возможные хвосты в БД по этим именинам"):
                 for u in users:
-                    db_client.delete_user_by_username(u)
+                    db_client.delete_user_by_username_from_users_and_friendship(u)
 
             with step("Публикуем пачку сообщений"):
                 for u in users:
@@ -110,4 +110,4 @@ class TestAuthRegistrationKafkaTest:
                     assert db_client.count_users_by_username(u) == 1
         finally:
             for u in users:
-                db_client.delete_user_by_username(u)
+                db_client.delete_user_by_username_from_users_and_friendship(u)

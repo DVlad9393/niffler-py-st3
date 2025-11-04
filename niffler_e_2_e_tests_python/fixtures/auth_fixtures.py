@@ -49,7 +49,39 @@ def api_test_user(envs: Envs, create_test_data, db_client) -> Generator[TestUser
 
     yield user
 
-    db_client.delete_user_by_username(username)
+    db_client.delete_user_by_username_from_users_and_friendship(username)
+
+
+@pytest.fixture(scope="function")
+def two_api_users(
+    envs, db_client, create_test_data
+) -> Generator[tuple[TestUser, TestUser], Any]:
+    """Создаёт двух независимых пользователей."""
+    auth = AuthClient(envs)
+    users = []
+
+    for _i in range(2):
+        username = f"{create_test_data[0]}_{fake.uuid4()[:8]}"
+        password = fake.password(
+            length=12, special_chars=True, digits=True, upper_case=True
+        )
+
+        for _ in range(3):
+            reg_resp = auth.registration(username, password, envs)
+            if reg_resp.status_code in (200, 201, 302):
+                break
+            time.sleep(1)
+        else:
+            raise AssertionError(f"Registration failed for {username}")
+
+        token = auth.get_token(username, password)
+        assert token, f"Token not issued for user {username}"
+        users.append(TestUser(username=username, password=password, token=token))
+
+    yield tuple(users)
+
+    for u in users:
+        db_client.delete_user_by_username_from_users_and_friendship(u.username)
 
 
 @pytest.fixture(scope="function")
