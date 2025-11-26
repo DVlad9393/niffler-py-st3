@@ -1,8 +1,8 @@
 import allure
 import pytest
 
-from ..pages.main_page import MainPage
-from ..pages.profile_page import ProfilePage
+from niffler_e_2_e_tests_python.pages.main_page import MainPage
+from niffler_e_2_e_tests_python.pages.profile_page import ProfilePage
 
 
 @allure.feature("Categories")

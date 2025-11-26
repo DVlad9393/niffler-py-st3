@@ -1,7 +1,7 @@
 import allure
 from playwright.sync_api import expect
 
-from ..page_factory.base_component import BaseComponent
+from niffler_e_2_e_tests_python.page_factory.base_component import BaseComponent
 
 
 class RadioButton(BaseComponent):

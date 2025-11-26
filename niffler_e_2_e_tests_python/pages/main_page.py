@@ -1,15 +1,15 @@
 from playwright.sync_api import Page
 
-from ..page_factory.block import Block
-from ..page_factory.button import Button
-from ..page_factory.checkbox import СheckBox
-from ..page_factory.image import Image
-from ..page_factory.input import Input
-from ..page_factory.list_item import ListItem
-from ..page_factory.table import Table
-from ..page_factory.text import Text
-from ..page_factory.title import Title
-from ..pages.base_page import BasePage
+from niffler_e_2_e_tests_python.page_factory.block import Block
+from niffler_e_2_e_tests_python.page_factory.button import Button
+from niffler_e_2_e_tests_python.page_factory.checkbox import СheckBox
+from niffler_e_2_e_tests_python.page_factory.image import Image
+from niffler_e_2_e_tests_python.page_factory.input import Input
+from niffler_e_2_e_tests_python.page_factory.list_item import ListItem
+from niffler_e_2_e_tests_python.page_factory.table import Table
+from niffler_e_2_e_tests_python.page_factory.text import Text
+from niffler_e_2_e_tests_python.page_factory.title import Title
+from niffler_e_2_e_tests_python.pages.base_page import BasePage
 
 
 class MainPage(BasePage):

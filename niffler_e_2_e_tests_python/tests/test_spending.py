@@ -3,8 +3,8 @@ from datetime import datetime
 import allure
 import pytest
 
-from ..pages.main_page import MainPage
-from ..pages.new_spending_page import NewSpendingPage
+from niffler_e_2_e_tests_python.pages.main_page import MainPage
+from niffler_e_2_e_tests_python.pages.new_spending_page import NewSpendingPage
 
 
 @allure.feature("Spending")
