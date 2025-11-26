@@ -1,7 +1,7 @@
 import allure
 import pytest
 
-from ..pages.login_page import LoginPage
+from niffler_e_2_e_tests_python.pages.login_page import LoginPage
 
 
 @allure.feature("Authentication")
